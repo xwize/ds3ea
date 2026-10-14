@@ -41,6 +41,7 @@ namespace ds3ea
 		/** Unregisters the event callbacks and the add-on. */
 		~Addon();
 
+		/** Not copyable or movable: the instance owns the ReShade registration. */
 		Addon(const Addon&) = delete;
 		Addon& operator=(const Addon&) = delete;
 		Addon(Addon&&) = delete;

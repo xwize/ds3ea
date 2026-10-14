@@ -21,8 +21,10 @@ The add-on API is header-only. `cmake/reshade.cmake` finds the headers in one of
 
 - **Default:** downloads the pinned ReShade commit (hash-checked, about 3 MB, once per build tree). A fresh clone or
   worktree configures with no setup.
-- **Local checkout:** set `DS3EA_RESHADE_DIR` to a ReShade source tree, e.g. `ds3ea/repos/reshade`. You can set it as
-  an environment variable (the presets forward it) or pass `-DDS3EA_RESHADE_DIR=...`.
+- **Local checkout:** set `DS3EA_RESHADE_DIR` to the **absolute** path of a ReShade source tree, e.g.
+  `S:\Internal\res_DS3EA_\ds3ea\repos\reshade`. A relative path resolves against wherever CMake runs from, which
+  varies between IDEs. You can set it as an environment variable (the presets forward it) or pass
+  `-DDS3EA_RESHADE_DIR=...`.
 
 To bump ReShade, update `DS3EA_RESHADE_COMMIT` and `DS3EA_RESHADE_SHA256` together.
 
