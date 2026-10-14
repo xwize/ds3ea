@@ -1,0 +1,79 @@
+{
+	"version": 6,
+	"cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+	"configurePresets": [
+		{
+			"name": "base",
+			"hidden": true,
+			"binaryDir": "${sourceDir}/build/${presetName}",
+			"cacheVariables": {
+				"DS3EA_RESHADE_DIR": "$env{DS3EA_RESHADE_DIR}"
+			},
+			"condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+		},
+		{
+			"name": "vs",
+			"displayName": "Visual Studio 2026 (x64, multi-config)",
+			"description": "Works from any shell; no developer prompt needed",
+			"inherits": "base",
+			"generator": "Visual Studio 18 2026",
+			"architecture": { "value": "x64", "strategy": "set" }
+		},
+		{
+			"name": "ninja-base",
+			"hidden": true,
+			"inherits": "base",
+			"generator": "Ninja",
+			"architecture": { "value": "x64", "strategy": "external" },
+			"toolset": { "value": "host=x64", "strategy": "external" },
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "cl",
+				"CMAKE_CXX_COMPILER": "cl"
+			},
+			"vendor": {
+				"microsoft.com/VisualStudioSettings/CMake/1.0": { "hostOS": [ "Windows" ] }
+			}
+		},
+		{
+			"name": "ninja-debug",
+			"displayName": "Ninja Debug (x64 MSVC)",
+			"description": "For IDEs that provide the MSVC environment (Visual Studio, CLion, VS Code)",
+			"inherits": "ninja-base",
+			"cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+		},
+		{
+			"name": "ninja-release",
+			"displayName": "Ninja Release (x64 MSVC)",
+			"description": "For IDEs that provide the MSVC environment (Visual Studio, CLion, VS Code)",
+			"inherits": "ninja-base",
+			"cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+		}
+	],
+	"buildPresets": [
+		{ "name": "vs-debug", "displayName": "Debug", "configurePreset": "vs", "configuration": "Debug" },
+		{ "name": "vs-release", "displayName": "Release", "configurePreset": "vs", "configuration": "Release" },
+		{ "name": "ninja-debug", "displayName": "Debug", "configurePreset": "ninja-debug" },
+		{ "name": "ninja-release", "displayName": "Release", "configurePreset": "ninja-release" }
+	],
+	"testPresets": [
+		{
+			"name": "test-base",
+			"hidden": true,
+			"output": { "outputOnFailure": true }
+		},
+		{
+			"name": "vs-debug",
+			"inherits": "test-base",
+			"configurePreset": "vs",
+			"configuration": "Debug"
+		},
+		{
+			"name": "vs-release",
+			"inherits": "test-base",
+			"configurePreset": "vs",
+			"configuration": "Release"
+		},
+		{ "name": "ninja-debug", "inherits": "test-base", "configurePreset": "ninja-debug" },
+		{ "name": "ninja-release", "inherits": "test-base", "configurePreset": "ninja-release" }
+	]
+}
