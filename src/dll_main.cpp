@@ -14,16 +14,16 @@ extern "C" __declspec(dllexport) const char* DESCRIPTION = ds3ea::k_addon_descri
 
 namespace
 {
-	// Created on process attach, destroyed on process detach; only touched under the loader lock
-	std::unique_ptr<ds3ea::Addon> g_addon;
+// Created on process attach, destroyed on process detach; only touched under the loader lock
+std::unique_ptr<ds3ea::Addon> g_addon;
 } // namespace
 
-BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID /*reserved*/)
+BOOL APIENTRY DllMain(HMODULE hmod, DWORD reason, LPVOID /*reserved*/)
 {
 	switch (reason)
 	{
 	case DLL_PROCESS_ATTACH:
-		g_addon = ds3ea::Addon::create(module);
+		g_addon = ds3ea::Addon::create(hmod);
 		return g_addon != nullptr;
 	case DLL_PROCESS_DETACH:
 		g_addon.reset();
