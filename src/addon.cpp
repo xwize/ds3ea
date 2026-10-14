@@ -1,9 +1,9 @@
 #include "addon.hpp"
 #include "addon_info.hpp"
 
-#include <reshade.hpp>
-
 #include <fmt/format.h>
+
+#include <reshade.hpp>
 
 #include <cstdint>
 #include <string>

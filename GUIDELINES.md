@@ -17,7 +17,10 @@
 	#include "alpha.hpp" // other project headers 
 	#include "beta.hpp"
 	(intentional newline)
-	#include <system_header_a> // system headers (d3d, win32 etc)
+	#include <fmt/format.h> // third-party libraries (fmt, gtest, imgui etc)
+	#include <gtest/gtest.h>
+	(intentional newline)
+	#include <system_header_a> // system headers (d3d, win32, reshade etc)
 	#include <system_header_b>
 	(intentional newline)
 	#include <stdlib_header_a> // standard library / STL
@@ -25,6 +28,17 @@
 	
 * Lines must be 120 columns MAX 
 * Free functions in .cpp files go into anon namespaces which end with } // namespace
+* Namespace contents are not indented: everything inside a namespace (named or anonymous, including forward
+  declaration blocks) starts in column 0
+* Class members are ordered: constructors and destructor first, then deleted/defaulted copy and move operations, then
+  the remaining public members (static factories included), then private. The only thing allowed above the
+  constructors is a declaration they need, such as a passkey type, kept to a one-line forward declaration and
+  defined in the .cpp
+* A constructor's initialiser list starts on its own line with `:`, indented one level; further initialisers that
+  don't fit go on their own `,`-prefixed lines
+	Addon::Addon(HMODULE hmod, Key /*key*/)
+		: m_module(hmod)
+	{
 * Each module or hpp that introduces a new namespace or interface should have a doxygen block explaining it
 * Each struct or class has a summary doxygen explaining it 
 * Every function declared in an hpp (the public API) has a doxygen block with an @param for each parameter and
