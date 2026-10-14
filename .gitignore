@@ -1,3 +1,8 @@
 build/
+out/
 repos/
 reference/
+.vs/
+.idea/
+cmake-build-*/
+CMakeUserPresets.json

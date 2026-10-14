@@ -1,0 +1,7 @@
+[requires]
+fmt/11.1.4
+gtest/1.15.0
+
+[generators]
+CMakeDeps
+CMakeToolchain
