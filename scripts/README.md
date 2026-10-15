@@ -7,7 +7,7 @@ Python 3 scripts that use only the standard library. Run them from any worktree.
 Runs your build of the add-on in the real game with no one at the keyboard:
 
 ```
-python scripts/launch_game.py [--addon PATH] [--game-dir DIR] [--seconds N] [--grace N]
+python scripts/launch_game.py [--addon PATH] [--game-dir DIR] [--seconds N] [--grace N] [--title-only]
 ```
 
 1. Refuses to start if `DarkSoulsIII.exe` is already running. A running game locks the add-on file, and only one
@@ -16,9 +16,12 @@ python scripts/launch_game.py [--addon PATH] [--game-dir DIR] [--seconds N] [--g
    default the newest `ds3ea.addon64` under this repo's `build/` folder. No other file in the game folder is
    changed.
 3. Starts `DarkSoulsIII.exe` from the game folder (`--game-dir`, default `E:\Games\Dark Souls 3\Game`).
-4. After `--seconds` (default 30), sends Alt+F4 to the game window. If the game is still running `--grace` seconds
+4. Once the game window appears, presses E 30 times, a second apart, to get past the intro and title screen and
+   load the last save. The character is in the world about 40 seconds after the start. `--title-only` skips the
+   presses and leaves the game on the title screen.
+5. After `--seconds` (default 60), sends Alt+F4 to the game window. If the game is still running `--grace` seconds
    later (default 15), the script kills it.
-5. Prints this run's part of `ReShade.log`, from ReShade's session header on. That includes everything logged
+6. Prints this run's part of `ReShade.log`, from ReShade's session header on. That includes everything logged
    through `ds3ea::log`.
 
 The exit code is 0 on success. It is 1 when the add-on couldn't be installed, the game couldn't start, the game

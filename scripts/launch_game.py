@@ -1,6 +1,8 @@
 """Install our add-on into Dark Souls 3, run the game for a while, close it and print this run's ReShade log.
 
-Usage: python scripts/launch_game.py [--addon PATH] [--game-dir DIR] [--seconds N]
+By default the script presses E a few times once the game window appears, to get past the title screen into the game.
+
+Usage: python scripts/launch_game.py [--addon PATH] [--game-dir DIR] [--seconds N] [--grace N] [--title-only]
 See scripts/README.md.
 """
 
@@ -23,8 +25,15 @@ user32 = ctypes.WinDLL("user32", use_last_error=True)
 
 VK_MENU = 0x12
 VK_F4 = 0x73
+SCAN_E = 0x12
 KEYEVENTF_KEYUP = 0x0002
+KEYEVENTF_SCANCODE = 0x0008
 SW_RESTORE = 9
+
+# The intro plays for about 25s after the window appears and ignores E, so the presses run until the save is loading
+TITLE_SCREEN_PRESSES = 30
+PRESS_INTERVAL_SECONDS = 1.0
+PRESS_HOLD_SECONDS = 0.08
 
 
 def fail(message: str) -> int:
@@ -59,6 +68,19 @@ def find_main_window(pid: int) -> int | None:
 
 	user32.EnumWindows(on_window, 0)
 	return found[0] if found else None
+
+
+def press_e(hwnd: int) -> None:
+	if user32.GetForegroundWindow() != hwnd:
+		user32.ShowWindow(hwnd, SW_RESTORE)
+		# Windows only lets the process that received the last input take the foreground, so a key event goes first
+		user32.keybd_event(VK_MENU, 0, 0, 0)
+		user32.SetForegroundWindow(hwnd)
+		user32.keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
+	# The game reads the keyboard through DirectInput, which sees scan codes rather than virtual keys
+	user32.keybd_event(0, SCAN_E, KEYEVENTF_SCANCODE, 0)
+	time.sleep(PRESS_HOLD_SECONDS)
+	user32.keybd_event(0, SCAN_E, KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP, 0)
 
 
 def send_alt_f4(hwnd: int) -> None:
@@ -108,9 +130,12 @@ def main() -> int:
 		help=f"add-on to install (default: the newest {ADDON_NAME} under {REPO_ROOT / 'build'})")
 	parser.add_argument("--game-dir", type=Path, default=DEFAULT_GAME_DIR,
 		help=f"folder holding {GAME_EXE} (default: {DEFAULT_GAME_DIR})")
-	parser.add_argument("--seconds", type=float, default=30, help="how long to run the game (default: 30)")
+	parser.add_argument("--seconds", type=float, default=60,
+		help="how long to run the game (default: 60, as loading into the game takes about 40s)")
 	parser.add_argument("--grace", type=float, default=15,
 		help="how long to wait for the game to exit after Alt+F4 before terminating it (default: 15)")
+	parser.add_argument("--title-only", action="store_true",
+		help=f"stay on the title screen instead of pressing E {TITLE_SCREEN_PRESSES} times to get into the game")
 	args = parser.parse_args()
 
 	game_exe = args.game_dir / GAME_EXE
@@ -140,13 +165,25 @@ def main() -> int:
 	print(f"Started {GAME_EXE} (pid {process.pid}); closing it in {args.seconds:g}s")
 
 	exited_early = False
+	presses_left = 0 if args.title_only else TITLE_SCREEN_PRESSES
+	next_press_at = 0.0
 	deadline = time.monotonic() + args.seconds
 	while time.monotonic() < deadline:
 		if process.poll() is not None:
 			exited_early = True
 			break
-		time.sleep(0.5)
+		if presses_left and time.monotonic() >= next_press_at:
+			hwnd = find_main_window(process.pid)
+			if hwnd:
+				if presses_left == TITLE_SCREEN_PRESSES:
+					print(f"Pressing E {TITLE_SCREEN_PRESSES} times to get past the title screen")
+				press_e(hwnd)
+				presses_left -= 1
+				next_press_at = time.monotonic() + PRESS_INTERVAL_SECONDS
+		time.sleep(0.1)
 
+	if presses_left == TITLE_SCREEN_PRESSES and not exited_early:
+		print("The game window never appeared, so E wasn't pressed")
 	if exited_early:
 		print(f"The game exited early with code {process.returncode:#x}", file=sys.stderr)
 	else:
