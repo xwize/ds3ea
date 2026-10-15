@@ -1,5 +1,5 @@
 #include "ini_settings_store.hpp"
-#include "log.hpp"
+#include "logging.hpp"
 
 #include <gtest/gtest.h>
 
