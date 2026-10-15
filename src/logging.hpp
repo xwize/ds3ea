@@ -19,7 +19,7 @@ enum class level;
 
 namespace ds3ea::log
 {
-/** Our levels: ReShade's four plus trace, which ReShade lacks (written as debug with a "T: " prefix). */
+/** Our levels: ReShade's four plus trace, which ReShade lacks. */
 enum class Level
 {
 	error,   // Something failed and a feature or setting won't work

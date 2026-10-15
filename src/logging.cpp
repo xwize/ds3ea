@@ -16,7 +16,7 @@ std::atomic<Sink> g_sink = nullptr;
 /**
  * @param level How serious the message is.
  * @param message The formatted text.
- * @returns ReShade's level and the line to write: levels map 1:1 except trace, which becomes debug with "T: ".
+ * @returns ReShade's level and the line to write.
  */
 std::pair<reshade::log::level, std::string> to_reshade_line(Level level, std::string_view message)
 {
