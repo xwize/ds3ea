@@ -40,7 +40,7 @@ public:
 	 * @param fallback Returned when the key is missing or its value isn't a finite number.
 	 * @returns The stored value, or fallback.
 	 */
-	float get_float_or(std::string_view section, std::string_view key, float fallback) const;
+	[[nodiscard]] float get_float_or(std::string_view section, std::string_view key, float fallback) const;
 
 	/**
 	 * Reads an integer.
@@ -49,7 +49,7 @@ public:
 	 * @param fallback Returned when the key is missing or its value isn't a whole decimal number that fits an int.
 	 * @returns The stored value, or fallback.
 	 */
-	int get_int_or(std::string_view section, std::string_view key, int fallback) const;
+	[[nodiscard]] int get_int_or(std::string_view section, std::string_view key, int fallback) const;
 
 	/**
 	 * Reads a bool, written as true, false, 1 or 0.
@@ -58,7 +58,7 @@ public:
 	 * @param fallback Returned when the key is missing or its value is none of those.
 	 * @returns The stored value, or fallback.
 	 */
-	bool get_bool_or(std::string_view section, std::string_view key, bool fallback) const;
+	[[nodiscard]] bool get_bool_or(std::string_view section, std::string_view key, bool fallback) const;
 
 	/**
 	 * Reads a string, with surrounding whitespace removed.
@@ -67,7 +67,7 @@ public:
 	 * @param fallback Returned when the key is missing.
 	 * @returns The stored value (possibly empty), or fallback.
 	 */
-	std::string get_string_or(std::string_view section, std::string_view key, std::string_view fallback) const;
+	[[nodiscard]] std::string get_string_or(std::string_view section, std::string_view key, std::string_view fallback) const;
 
 	/**
 	 * Stores a float, written with 3 decimals (e.g. 0.850).
@@ -109,7 +109,7 @@ public:
 	bool save() const;
 
 	/** @returns The path given at construction. */
-	const std::filesystem::path& get_path() const;
+	[[nodiscard]] const std::filesystem::path& get_path() const;
 
 private:
 	class Impl;
