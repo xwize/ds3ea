@@ -2,6 +2,7 @@ build/
 out/
 repos/
 reference/
+wiki/spikes/
 .vs/
 .idea/
 cmake-build-*/
