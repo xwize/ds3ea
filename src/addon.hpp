@@ -25,8 +25,8 @@ class Addon
 
 public:
 	/**
-	 * Loads ds3ea.ini from next to the add-on's DLL and registers the event callbacks. Only create() can call it, once
-	 * ReShade has accepted the add-on.
+	 * Loads ds3ea.ini from the game's working directory and registers the event callbacks. Only create() can call it,
+	 * once ReShade has accepted the add-on.
 	 * @param hmod Handle of this add-on's DLL.
 	 * @param key Passkey only create() can make.
 	 */

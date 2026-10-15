@@ -12,8 +12,8 @@ to build on. Coding rules live in [GUIDELINES.md](GUIDELINES.md).
   is too old. Run `conan profile detect` once if you have no default profile.
 
 You don't need to run `conan install` yourself. CMake runs it during configure through
-[cmake-conan](https://github.com/conan-io/cmake-conan) (`cmake/conan_provider.cmake`). It builds `fmt`, `gtest`,
-`inipp` and `scnlib` with the static CRT and C++20 to match the project.
+[cmake-conan](https://github.com/conan-io/cmake-conan) (`cmake/conan_provider.cmake`). It builds `fmt`, `gtest` and
+`inipp` with the static CRT and C++20 to match the project.
 
 ### ReShade headers
 
@@ -65,4 +65,5 @@ command line, run them from a *x64 Native Tools* prompt. Their output goes to `b
 3. Start the game. **DS3EA** shows up in the overlay's *Add-ons* tab, and `ReShade.log` has a line like
    `DS3EA hello world (device api 0xb000)`.
 
-Settings live in `ds3ea.ini` next to `ds3ea.addon64`. The file is optional: missing settings use their defaults.
+Settings live in `ds3ea.ini` in the game's working directory (the `Game` folder). The file is optional: missing
+settings use their defaults.

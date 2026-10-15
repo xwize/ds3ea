@@ -4,12 +4,9 @@
 #include <fmt/format.h>
 #include <fmt/std.h>
 #include <inipp.h>
-#include <scn/scan.h>
 
 #include <algorithm>
-#include <cmath>
 #include <fstream>
-#include <optional>
 #include <system_error>
 #include <utility>
 
@@ -20,18 +17,19 @@ namespace
 using Ini = inipp::Ini<char>;
 
 /**
- * Scans the whole of text as one value of type T.
- * @param text The value as read from the file.
- * @returns The value, or nothing if text doesn't hold one or has anything after it.
+ * Converts a value with inipp, which rejects text that isn't wholly one value of type T.
+ * @param text The value as read from the file, or nullptr if the key is missing.
+ * @param fallback Returned when text is missing or isn't a T.
+ * @returns The converted value, or fallback.
  */
 template <typename T>
-std::optional<T> scan_value(std::string_view text)
+T extract_or(const std::string* text, T fallback)
 {
-	auto result = scn::scan<T>(text, "{}");
-	if (!result || !result->range().empty())
-		return std::nullopt;
+	T value = fallback;
+	if (text != nullptr)
+		inipp::extract(*text, value); // Leaves value alone when it fails
 
-	return result->value();
+	return value;
 }
 } // namespace
 
@@ -47,16 +45,16 @@ public:
 		{
 			std::error_code error;
 			if (std::filesystem::exists(m_path, error))
-				log_error("Can't open {}; using default settings", m_path);
+				log::error("Can't open {}; using default settings", m_path);
 			else
-				log_info("{} doesn't exist yet; using default settings", m_path);
+				log::info("{} doesn't exist yet; using default settings", m_path);
 
 			return;
 		}
 
 		m_ini.parse(file);
 		for (const std::string& line : m_ini.errors)
-			log_warning("Ignoring line in {}: {}", m_path, line);
+			log::warning("Ignoring line in {}: {}", m_path, line);
 	}
 
 	/**
@@ -91,7 +89,7 @@ public:
 		temp_path += L".tmp";
 		if (!write(temp_path))
 		{
-			log_error("Can't write {}; settings not saved", temp_path);
+			log::error("Can't write {}; settings not saved", temp_path);
 			return false;
 		}
 
@@ -100,10 +98,10 @@ public:
 		if (!error)
 			return true;
 
-		log_error("Can't replace {} with {}: {}; settings not saved", m_path, temp_path, error.message());
+		log::error("Can't replace {} with {}: {}; settings not saved", m_path, temp_path, error.message());
 		std::filesystem::remove(temp_path, error);
 		if (error)
-			log_warning("Can't remove {}: {}", temp_path, error.message());
+			log::warning("Can't remove {}: {}", temp_path, error.message());
 
 		return false;
 	}
@@ -152,25 +150,25 @@ IniSettingsStore::~IniSettingsStore() = default;
 
 float IniSettingsStore::get_float_or(std::string_view section, std::string_view key, float fallback) const
 {
-	const std::string* const text = m_impl->find(section, key);
-	if (text == nullptr)
-		return fallback;
-
-	// inf and nan scan as floats, but no setting can use them
-	const std::optional<float> value = scan_value<float>(*text);
-	return value.has_value() && std::isfinite(*value) ? *value : fallback;
+	return extract_or(m_impl->find(section, key), fallback);
 }
 
 int IniSettingsStore::get_int_or(std::string_view section, std::string_view key, int fallback) const
 {
-	const std::string* const text = m_impl->find(section, key);
-	return text != nullptr ? scan_value<int>(*text).value_or(fallback) : fallback;
+	return extract_or(m_impl->find(section, key), fallback);
 }
 
 bool IniSettingsStore::get_bool_or(std::string_view section, std::string_view key, bool fallback) const
 {
+	// inipp reads only true and false, so 1 and 0 are handled here
 	const std::string* const text = m_impl->find(section, key);
-	return text != nullptr ? scan_value<bool>(*text).value_or(fallback) : fallback;
+	if (text != nullptr && *text == "1")
+		return true;
+
+	if (text != nullptr && *text == "0")
+		return false;
+
+	return extract_or(text, fallback);
 }
 
 std::string IniSettingsStore::get_string_or(std::string_view section, std::string_view key,
