@@ -77,7 +77,7 @@ def press_e(hwnd: int) -> None:
 		user32.keybd_event(VK_MENU, 0, 0, 0)
 		user32.SetForegroundWindow(hwnd)
 		user32.keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
-	# The game reads the keyboard by scan code and ignores virtual-key-only events
+	# The game reads the keyboard through DirectInput, which sees scan codes rather than virtual keys
 	user32.keybd_event(0, SCAN_E, KEYEVENTF_SCANCODE, 0)
 	time.sleep(PRESS_HOLD_SECONDS)
 	user32.keybd_event(0, SCAN_E, KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP, 0)
