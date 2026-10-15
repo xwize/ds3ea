@@ -1,0 +1,7 @@
+# Tests use the checks in ../.clang-tidy, minus two that fight GoogleTest's idioms
+InheritParentConfig: true
+# - avoid-magic-numbers: literal inputs and expected values are what a test reads best with
+# - non-private-member-variables-in-classes: fixtures share state with their TEST_F bodies through protected members
+Checks: >
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-non-private-member-variables-in-classes

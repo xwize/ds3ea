@@ -7,6 +7,8 @@ to build on. Coding rules live in [GUIDELINES.md](GUIDELINES.md).
 
 - Windows 10/11 x64
 - Visual Studio 2026 (MSVC 14.5x, the "Desktop development with C++" workload). It also provides Ninja.
+- Visual Studio's "C++ Clang tools for Windows" component, for the clang-tidy that runs on every build
+  (`.clang-tidy`). Configure with `-DDS3EA_CLANG_TIDY=OFF` to build without it.
 - CMake 3.25 or newer (on PATH)
 - Conan 2 (on PATH: `pip install -U conan`), recent enough to know MSVC 14.5 (`msvc 195`). 2.33 is tested; 2.19
   is too old. Run `conan profile detect` once if you have no default profile.

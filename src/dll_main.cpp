@@ -9,8 +9,9 @@
  * ReShade reads these exports for the Add-ons tab. The names are fixed by ReShade's add-on API, so they don't follow
  * our naming rules.
  */
-extern "C" __declspec(dllexport) const char* NAME = ds3ea::k_addon_name;
-extern "C" __declspec(dllexport) const char* DESCRIPTION = ds3ea::k_addon_description;
+extern "C" __declspec(dllexport) const char* NAME = ds3ea::k_addon_name; // NOLINT(readability-identifier-naming)
+extern "C" __declspec(dllexport) const char* DESCRIPTION = // NOLINT(readability-identifier-naming)
+	ds3ea::k_addon_description;
 
 namespace
 {
@@ -18,6 +19,7 @@ namespace
 std::unique_ptr<ds3ea::Addon> g_addon;
 } // namespace
 
+// NOLINTNEXTLINE(readability-identifier-naming): the name Windows calls
 BOOL APIENTRY DllMain(HMODULE hmod, DWORD reason, LPVOID /*reserved*/)
 {
 	switch (reason)

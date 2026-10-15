@@ -14,7 +14,7 @@
 
 namespace reshade::log
 {
-enum class level;
+enum class level; // NOLINT(readability-identifier-naming): ReShade's type
 } // namespace reshade::log
 
 namespace ds3ea::log
@@ -141,6 +141,8 @@ public:
 	{
 		message(level, format, std::forward<Args>(args)...);
 	}
+
+	~Once() = default;
 
 	/** Not copyable or movable: each one stands for one call site. */
 	Once(const Once&) = delete;

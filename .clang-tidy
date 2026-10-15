@@ -1,0 +1,115 @@
+# clang-tidy checks for our sources (src/ and test/), run on every build (cmake/clang_tidy.cmake, DS3EA_CLANG_TIDY).
+# The hard rules from GUIDELINES.md fail the build (WarningsAsErrors at the bottom); everything else is a warning,
+# and the code is kept free of both.
+#
+# Disabled, with the reason:
+#   - bugprone-easily-swappable-parameters: (section, key) string pairs and similar are inherent to the APIs; names
+#     and tests guard against swaps
+#   - cppcoreguidelines-avoid-non-const-global-variables: GUIDELINES.md allows module state at file scope with g_
+#   - cppcoreguidelines-owning-memory: needs gsl::owner, which we don't use; naked new/delete are custom checks below
+#   - performance-enum-size: our enums are never stored in bulk, so int-sized is fine
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-owning-memory,
+  google-readability-casting,
+  misc-include-cleaner,
+  misc-redundant-expression,
+  misc-unused-using-decls,
+  modernize-avoid-c-arrays,
+  modernize-use-nullptr,
+  modernize-use-override,
+  performance-*,
+  -performance-enum-size,
+  readability-function-cognitive-complexity,
+  readability-function-size,
+  readability-identifier-length,
+  readability-identifier-naming,
+  readability-isolate-declaration,
+  custom-*
+# No naked new or delete: objects are owned by std::make_unique, a ComPtr or by value. These are clang-query matchers
+# (they need --experimental-custom-checks, which cmake/clang_tidy.cmake passes); the new inside std::make_unique is in
+# a system header and isn't reported.
+CustomChecks:
+  - Name: no-naked-new
+    Query: |
+      match cxxNewExpr().bind("new")
+    Diagnostic:
+      - BindName: new
+        Message: naked new; own the object with std::make_unique, a ComPtr or by value
+        Level: Warning
+  - Name: no-naked-delete
+    Query: |
+      match cxxDeleteExpr().bind("delete")
+    Diagnostic:
+      - BindName: delete
+        Message: naked delete; let a smart pointer or the owning object's lifetime release it
+        Level: Warning
+CheckOptions:
+  # Naming (GUIDELINES.md): PascalCase types; snake_case namespaces, functions, variables and enumerators; g_ for
+  # globals, m_ for non-public members, k_ for constexpr values; locals, statics, parameters and public fields have
+  # no prefix
+  readability-identifier-naming.NamespaceCase: lower_case
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.StructCase: CamelCase
+  readability-identifier-naming.UnionCase: CamelCase
+  readability-identifier-naming.EnumCase: CamelCase
+  readability-identifier-naming.TypeAliasCase: CamelCase
+  readability-identifier-naming.TypedefCase: CamelCase
+  readability-identifier-naming.TemplateParameterCase: CamelCase
+  readability-identifier-naming.EnumConstantCase: lower_case
+  readability-identifier-naming.FunctionCase: lower_case
+  readability-identifier-naming.MethodCase: lower_case
+  readability-identifier-naming.ParameterCase: lower_case
+  readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.LocalVariableCase: lower_case
+  readability-identifier-naming.LocalConstantCase: lower_case
+  readability-identifier-naming.StaticVariableCase: lower_case
+  readability-identifier-naming.StaticConstantCase: lower_case
+  readability-identifier-naming.GlobalVariableCase: lower_case
+  readability-identifier-naming.GlobalVariablePrefix: g_
+  readability-identifier-naming.ConstexprVariableCase: lower_case
+  readability-identifier-naming.ConstexprVariablePrefix: k_
+  readability-identifier-naming.PublicMemberCase: lower_case
+  readability-identifier-naming.PrivateMemberCase: lower_case
+  readability-identifier-naming.PrivateMemberPrefix: m_
+  readability-identifier-naming.ProtectedMemberCase: lower_case
+  readability-identifier-naming.ProtectedMemberPrefix: m_
+  # Names are at least 3 characters, except coordinates (x y z dx dy dz), loop counters (i j k), e and n
+  readability-identifier-length.MinimumVariableNameLength: 3
+  readability-identifier-length.MinimumParameterNameLength: 3
+  readability-identifier-length.MinimumLoopCounterNameLength: 3
+  readability-identifier-length.MinimumExceptionNameLength: 3
+  readability-identifier-length.IgnoredVariableNames: '^(x|y|z|dx|dy|dz|i|j|k|e|n)$'
+  readability-identifier-length.IgnoredParameterNames: '^(x|y|z|dx|dy|dz|i|j|k|e|n)$'
+  readability-identifier-length.IgnoredLoopCounterNames: '^(x|y|z|dx|dy|dz|i|j|k|e|n)$'
+  readability-identifier-length.IgnoredExceptionVariableNames: '^(x|y|z|dx|dy|dz|i|j|k|e|n)$'
+  # Functions stay simple: cognitive complexity at most 25, nesting at most 4 levels, at most 6 parameters
+  readability-function-cognitive-complexity.Threshold: 25
+  readability-function-size.NestingThreshold: 4
+  readability-function-size.ParameterThreshold: 6
+  # Report unused includes only, not symbols that come through another header. Windows.h is the documented way in
+  # to the Win32 types it pulls from its sub-headers, and fmt/std.h only adds formatters, which the check can't see.
+  misc-include-cleaner.MissingIncludes: false
+  misc-include-cleaner.IgnoreHeaders: 'Windows\.h;fmt[\\/]std\.h'
+# Report only our own headers: not ReShade (repos/ or the copy cmake/reshade.cmake fetches into _deps/), Conan
+# packages or generated code
+HeaderFilterRegex: '.*[\\/](src|test)[\\/].*'
+ExcludeHeaderFilterRegex: '.*[\\/](src[\\/]gen|repos|_deps|\.conan2)[\\/].*'
+# Hard rules from GUIDELINES.md: these fail the build
+WarningsAsErrors: >
+  readability-identifier-naming,
+  readability-identifier-length,
+  readability-function-cognitive-complexity,
+  readability-function-size,
+  readability-isolate-declaration,
+  custom-*,
+  cppcoreguidelines-pro-type-cstyle-cast,
+  google-readability-casting,
+  cppcoreguidelines-avoid-c-arrays,
+  modernize-avoid-c-arrays,
+  cppcoreguidelines-init-variables
