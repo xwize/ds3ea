@@ -1,6 +1,7 @@
 [requires]
 fmt/11.1.4
 gtest/1.15.0
+inipp/1.0.12
 
 [generators]
 CMakeDeps
