@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ini_settings_store.hpp"
+
 #include <Windows.h>
 
 #include <memory>
@@ -12,8 +14,9 @@ struct device;
 namespace ds3ea
 {
 /**
- * The add-on's registration with ReShade. Constructing one through create() registers the add-on and its event
- * callbacks; destroying it unregisters them. DllMain owns the single instance for the life of the module.
+ * The add-on's registration with ReShade and the owner of its services. Constructing one through create() registers
+ * the add-on and its event callbacks and loads ds3ea.ini; destroying it unregisters them. DllMain owns the single
+ * instance for the life of the module.
  */
 class Addon
 {
@@ -22,7 +25,8 @@ class Addon
 
 public:
 	/**
-	 * Registers the event callbacks. Only create() can call it, once ReShade has accepted the add-on.
+	 * Loads ds3ea.ini from the game's working directory and registers the event callbacks. Only create() can call it,
+	 * once ReShade has accepted the add-on.
 	 * @param hmod Handle of this add-on's DLL.
 	 * @param key Passkey only create() can make.
 	 */
@@ -53,5 +57,6 @@ private:
 	static void on_init_device(reshade::api::device* device);
 
 	HMODULE m_module;
+	IniSettingsStore m_settings;
 };
 } // namespace ds3ea

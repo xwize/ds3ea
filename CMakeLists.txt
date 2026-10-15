@@ -29,11 +29,24 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(cmake/reshade.cmake)
 
 find_package(fmt REQUIRED)
+find_package(inipp REQUIRED)
+find_package(scn REQUIRED)
 
 # Compiler settings shared by the add-on and its tests
 add_library(ds3ea_options INTERFACE)
 target_compile_options(ds3ea_options INTERFACE /W4 /WX /permissive- /utf-8 /external:W0)
 target_compile_definitions(ds3ea_options INTERFACE UNICODE _UNICODE)
+
+# Code shared by the add-on and its tests. inipp is linked PRIVATE so only ini_settings_store.cpp sees it; scnlib is
+# there for parsing text.
+add_library(ds3ea_core STATIC
+	src/ini_settings_store.cpp
+	src/ini_settings_store.hpp
+	src/log.cpp
+	src/log.hpp
+)
+target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(ds3ea_core PUBLIC fmt::fmt PRIVATE ds3ea_options inipp::inipp reshade::headers scn::scn)
 
 add_library(ds3ea SHARED
 	src/addon.cpp
@@ -41,7 +54,7 @@ add_library(ds3ea SHARED
 	src/addon_info.hpp
 	src/dll_main.cpp
 )
-target_link_libraries(ds3ea PRIVATE ds3ea_options reshade::headers fmt::fmt)
+target_link_libraries(ds3ea PRIVATE ds3ea_options ds3ea_core reshade::headers fmt::fmt)
 # ReShade loads add-ons by extension, so the DLL is ds3ea.addon64
 set_target_properties(ds3ea PROPERTIES
 	OUTPUT_NAME "ds3ea"

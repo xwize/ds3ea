@@ -1,15 +1,20 @@
 #include "addon.hpp"
 #include "addon_info.hpp"
-
-#include <fmt/format.h>
+#include "ini_settings_store.hpp"
+#include "log.hpp"
 
 #include <reshade.hpp>
 
 #include <cstdint>
-#include <string>
 
 namespace ds3ea
 {
+namespace
+{
+// Relative, so it resolves against the game's working directory
+constexpr const wchar_t* k_ini_file_name = L"ds3ea.ini";
+} // namespace
+
 struct Addon::Key
 {
 	explicit Key() = default;
@@ -17,6 +22,7 @@ struct Addon::Key
 
 Addon::Addon(HMODULE hmod, Key /*key*/)
 	: m_module(hmod)
+	, m_settings(k_ini_file_name)
 {
 	reshade::register_event<reshade::addon_event::init_device>(&Addon::on_init_device);
 }
@@ -24,6 +30,7 @@ Addon::Addon(HMODULE hmod, Key /*key*/)
 Addon::~Addon()
 {
 	reshade::unregister_event<reshade::addon_event::init_device>(&Addon::on_init_device);
+	log::set_sink(nullptr);
 	reshade::unregister_addon(m_module);
 }
 
@@ -33,13 +40,14 @@ std::unique_ptr<Addon> Addon::create(HMODULE hmod)
 	if (!reshade::register_addon(hmod))
 		return nullptr;
 
+	// Before construction, so loading the settings can already log
+	log::set_sink(&log::write_to_reshade);
 	return std::make_unique<Addon>(hmod, Key());
 }
 
 void Addon::on_init_device(reshade::api::device* device)
 {
-	const std::string message = fmt::format("{} hello world (device api {:#x})", k_addon_name,
-		static_cast<std::uint32_t>(device->get_api()));
-	reshade::log::message(reshade::log::level::info, message.c_str());
+	const auto api = static_cast<std::uint32_t>(device->get_api());
+	log::info("{} hello world (device api {:#x})", k_addon_name, api);
 }
 } // namespace ds3ea
