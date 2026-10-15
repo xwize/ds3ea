@@ -101,6 +101,8 @@
   Where it makes sense the boundary also disables the affected feature
 * A catch that handles only some categories switches on get_error().category, handles those and rethrows the rest
   with throw;. Never swallow unhandled categories in a default:
+* Debug-only code uses if constexpr (ds3ea::k_debug_build) (utils/build_config.hpp), never #ifdef _DEBUG, so it is
+  compiled in every configuration
 * Code builds with no warnings under both MSVC and clang-cl (the clang-debug / clang-release presets), and changes to
   tested code pass the clang-sanitize preset (ASan + UBSan) before review
 * Rules marked (clang-tidy) are checked on every build with the checks in .clang-tidy (test/.clang-tidy relaxes two

@@ -74,10 +74,13 @@ endif()
 # there for parsing text.
 add_library(ds3ea_core STATIC
 	src/utils/boundary.hpp
+	src/utils/build_config.hpp
 	src/utils/error.cpp
 	src/utils/error.hpp
 	src/utils/ini_settings_store.cpp
 	src/utils/ini_settings_store.hpp
+	src/utils/leak_check.cpp
+	src/utils/leak_check.hpp
 	src/utils/logging.cpp
 	src/utils/logging.hpp
 	src/utils/result.hpp
