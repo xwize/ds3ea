@@ -1,7 +1,7 @@
 #include "addon.hpp"
 #include "addon_info.hpp"
 #include "ini_settings_store.hpp"
-#include "log.hpp"
+#include "logging.hpp"
 
 #include <reshade.hpp>
 

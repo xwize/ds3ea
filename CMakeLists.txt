@@ -42,8 +42,8 @@ target_compile_definitions(ds3ea_options INTERFACE UNICODE _UNICODE)
 add_library(ds3ea_core STATIC
 	src/ini_settings_store.cpp
 	src/ini_settings_store.hpp
-	src/log.cpp
-	src/log.hpp
+	src/logging.cpp
+	src/logging.hpp
 )
 target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(ds3ea_core PUBLIC fmt::fmt PRIVATE ds3ea_options inipp::inipp reshade::headers scn::scn)
