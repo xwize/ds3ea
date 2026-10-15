@@ -1,5 +1,6 @@
 #include "addon.hpp"
 #include "addon_info.hpp"
+#include "boundary.hpp"
 
 #include <Windows.h>
 
@@ -26,7 +27,7 @@ BOOL APIENTRY DllMain(HMODULE hmod, DWORD reason, LPVOID /*reserved*/)
 	switch (reason)
 	{
 	case DLL_PROCESS_ATTACH:
-		g_addon = ds3ea::Addon::create(hmod);
+		ds3ea::call_at_boundary("DllMain", [hmod] { g_addon = ds3ea::Addon::create(hmod); });
 		return g_addon != nullptr;
 	case DLL_PROCESS_DETACH:
 		g_addon.reset();

@@ -85,6 +85,22 @@
 * struct is preferred for plain old data 
 * One class per header file (but many pod structs are OK)
 * Conan for packages 
+* Errors: a failure is described by one ds3ea::Error (an ErrorCategory, a message and the source location where it
+  was raised), reported one of two ways:
+	- Result<T> (result.hpp) for functions deep in the call stack and called often (per frame, per draw, per
+	  resource), or whose error handling is very simple (the caller checks it and falls back). Return
+	  make_error(category, "format", args...). Never call .value() on a Result: check and dereference it, chain it
+	  (and_then, map, or_else) or use get_or_throw()
+	- Exceptions for every other failure: I/O, constructors that can't fully initialise, setup, anything that has to
+	  travel up several levels. Throw with throw_error(category, "format", args...), which throws a
+	  RuntimeException; capture() turns one back into a Result
+	- assert (<cassert>) for programmer errors (null where non-null is required, an index out of range, a call in
+	  the wrong state), never Result or an exception: a broken precondition is a bug, not a runtime error
+* Exceptions never escape into ReShade, D3D11, the game or Windows: every boundary (each ReShade event callback,
+  DllMain, add-on init) runs its work through call_at_boundary() (boundary.hpp), which logs and never rethrows.
+  Where it makes sense the boundary also disables the affected feature
+* A catch that handles only some categories switches on get_error().category, handles those and rethrows the rest
+  with throw;. Never swallow unhandled categories in a default:
 * Rules marked (clang-tidy) are checked on every build with the checks in .clang-tidy (test/.clang-tidy relaxes two
   for tests) and fail it. Configure with -DDS3EA_CLANG_TIDY=OFF for a faster local build without it.
   // NOLINT(check-name) is only for names or forms an external API forces (Win32, ReShade, DllMain), with the reason
