@@ -7,11 +7,9 @@ cmake_minimum_required(VERSION 3.25)
 if(NOT DEFINED CMAKE_PROJECT_TOP_LEVEL_INCLUDES)
 	set(CMAKE_PROJECT_TOP_LEVEL_INCLUDES "${CMAKE_CURRENT_LIST_DIR}/cmake/conan_provider.cmake")
 endif()
-# Stop Conan writing a CMakeUserPresets.json into the source tree, which belongs to the developer. scnlib's Conan
-# recipe refuses C++17 on MSVC, so only scnlib is built as C++20; its headers compile as C++17.
-set(CONAN_INSTALL_ARGS
-	"--build=missing;-c=tools.cmake.cmaketoolchain:user_presets=;-s:h=scnlib/*:compiler.cppstd=20"
-	CACHE STRING "Command line arguments for conan install")
+# Stop Conan writing a CMakeUserPresets.json into the source tree, which belongs to the developer
+set(CONAN_INSTALL_ARGS "--build=missing;-c=tools.cmake.cmaketoolchain:user_presets=" CACHE STRING
+	"Command line arguments for conan install")
 
 # Static CRT, same as ReShade, so the add-on has no VC redistributable dependency. Set before project() so Conan
 # builds its packages with the matching runtime.
@@ -24,7 +22,7 @@ if(NOT MSVC OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
 	message(FATAL_ERROR "DS3EA builds only as a 64-bit MSVC target (Dark Souls 3 is x64)")
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
