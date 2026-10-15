@@ -1,5 +1,5 @@
-#include "error.hpp"
-#include "runtime_error.hpp"
+#include "utils/error.hpp"
+#include "utils/runtime_error.hpp"
 
 #include <fmt/format.h>
 #include <gtest/gtest.h>

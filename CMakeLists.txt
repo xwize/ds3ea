@@ -42,16 +42,16 @@ target_compile_definitions(ds3ea_options INTERFACE UNICODE _UNICODE)
 # Code shared by the add-on and its tests. inipp is linked PRIVATE so only ini_settings_store.cpp sees it; scnlib is
 # there for parsing text.
 add_library(ds3ea_core STATIC
-	src/boundary.hpp
-	src/error.cpp
-	src/error.hpp
-	src/ini_settings_store.cpp
-	src/ini_settings_store.hpp
-	src/logging.cpp
-	src/logging.hpp
-	src/result.hpp
-	src/runtime_error.cpp
-	src/runtime_error.hpp
+	src/utils/boundary.hpp
+	src/utils/error.cpp
+	src/utils/error.hpp
+	src/utils/ini_settings_store.cpp
+	src/utils/ini_settings_store.hpp
+	src/utils/logging.cpp
+	src/utils/logging.hpp
+	src/utils/result.hpp
+	src/utils/runtime_error.cpp
+	src/utils/runtime_error.hpp
 )
 target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(ds3ea_core

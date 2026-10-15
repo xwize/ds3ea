@@ -1,5 +1,5 @@
-#include "ini_settings_store.hpp"
-#include "logging.hpp"
+#include "utils/ini_settings_store.hpp"
+#include "utils/logging.hpp"
 
 #include <fmt/format.h>
 #include <fmt/std.h>
