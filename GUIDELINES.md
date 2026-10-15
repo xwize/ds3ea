@@ -101,6 +101,8 @@
   Where it makes sense the boundary also disables the affected feature
 * A catch that handles only some categories switches on get_error().category, handles those and rethrows the rest
   with throw;. Never swallow unhandled categories in a default:
+* Code builds with no warnings under both MSVC and clang-cl (the clang-debug / clang-release presets), and changes to
+  tested code pass the clang-sanitize preset (ASan + UBSan) before review
 * Rules marked (clang-tidy) are checked on every build with the checks in .clang-tidy (test/.clang-tidy relaxes two
   for tests) and fail it. Configure with -DDS3EA_CLANG_TIDY=OFF for a faster local build without it.
   // NOLINT(check-name) is only for names or forms an external API forces (Win32, ReShade, DllMain), with the reason

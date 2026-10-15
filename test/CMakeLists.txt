@@ -10,6 +10,9 @@ add_executable(ds3ea_tests
 )
 target_link_libraries(ds3ea_tests PRIVATE ds3ea_options ds3ea_core reshade::headers GTest::gtest_main)
 ds3ea_clang_tidy(ds3ea_tests)
+if(DS3EA_SANITIZE)
+	ds3ea_copy_asan_runtime(ds3ea_tests)
+endif()
 
 include(GoogleTest)
 gtest_discover_tests(ds3ea_tests)

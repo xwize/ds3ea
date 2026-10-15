@@ -58,6 +58,32 @@ The `CMakePresets.json` presets work in any IDE that supports CMake presets:
 The `ninja-debug` / `ninja-release` presets need the MSVC environment, which the IDEs above set up for you. On the
 command line, run them from a *x64 Native Tools* prompt. Their output goes to `build/ninja-<config>/ds3ea.addon64`.
 
+### clang-cl and the sanitizers
+
+MSVC builds the add-on for the game. The `clang-*` presets build with **clang-cl** too, from the same "C++ Clang tools"
+component. A second compiler has different warnings and rejects some non-portable code MSVC accepts, so it finds
+problems MSVC lets through. Like the `ninja-*` presets, they need the MSVC environment:
+
+```sh
+cmake --preset clang-debug               # or clang-release, clang-sanitize
+cmake --build --preset clang-debug
+ctest --preset clang-debug
+```
+
+- **`clang-debug` / `clang-release`:** everything, add-on included, with the same warnings-as-errors policy as MSVC.
+- **`clang-sanitize`:** only the unit tests and `ds3ea_core`, built with the sanitizers, so a memory bug or undefined
+  behaviour fails the test run with a report naming the line. The add-on isn't built: it isn't for the game.
+  - **AddressSanitizer** catches out-of-bounds reads and writes on the heap, stack and globals (including past the
+    size of a `std::vector` or `std::string`), use after free, double free and use of the stack after return.
+  - **UndefinedBehaviorSanitizer** catches signed overflow, out-of-range shifts, null or misaligned access, invalid
+    `bool` and enum values, integer division by zero and similar.
+  - **Not caught:** leaks (LeakSanitizer doesn't exist on Windows; a CRT leak check is planned in DSEA-0011), data races and
+    uninitialised reads (TSan and MSan aren't available either), and anything in code the tests don't run.
+
+With clang-cl, Conan builds its own `compiler=clang` packages (and ASan ones for `clang-sanitize`), which takes about
+half a minute the first time each preset is configured. clang-tidy is off in these presets, since the MSVC builds
+already run it.
+
 ## Installing
 
 1. Install ReShade **with full add-on support** (the "ReShade with full add-on support" installer from reshade.me)
