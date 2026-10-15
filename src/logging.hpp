@@ -46,8 +46,7 @@ void set_sink(Sink sink);
 void write_to_reshade(reshade::log::level level, std::string_view line);
 
 /**
- * Maps a message onto ReShade's levels (trace becomes debug with a "T: " prefix) and sends it to the installed
- * sink, if any.
+ * Maps a message onto ReShade's levels and sends it to the installed sink, if any.
  * @param level How serious the message is.
  * @param message The formatted text, without a trailing line break.
  */
