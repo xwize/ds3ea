@@ -1,16 +1,16 @@
-#include "runtime_exception.hpp"
+#include "runtime_error.hpp"
 
 #include <utility>
 
 namespace ds3ea
 {
-RuntimeException::RuntimeException(Error error)
+RuntimeError::RuntimeError(Error error)
 	: std::runtime_error(error.message)
 	, m_error(std::move(error))
 {
 }
 
-const Error& RuntimeException::get_error() const
+const Error& RuntimeError::get_error() const
 {
 	return m_error;
 }

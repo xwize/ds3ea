@@ -26,6 +26,8 @@ std::string_view get_category_name(ErrorCategory category)
 }
 } // namespace ds3ea
 
+// fmt's formatter for our Error type (declared in error.hpp), so an Error can be passed to fmt::format or log::error
+// like any value: log::error("{}", error) writes "[not_found] cannot open ds3ea.ini (ini_settings_store.cpp:42)"
 fmt::format_context::iterator fmt::formatter<ds3ea::Error>::format(const ds3ea::Error& error,
 	fmt::format_context& ctx) const
 {

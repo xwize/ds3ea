@@ -50,8 +50,8 @@ add_library(ds3ea_core STATIC
 	src/logging.cpp
 	src/logging.hpp
 	src/result.hpp
-	src/runtime_exception.cpp
-	src/runtime_exception.hpp
+	src/runtime_error.cpp
+	src/runtime_error.hpp
 )
 target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(ds3ea_core

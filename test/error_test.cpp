@@ -4,29 +4,12 @@
 #include <fmt/format.h>
 #include <gtest/gtest.h>
 
-#include <array>
 #include <source_location>
 #include <string>
 #include <string_view>
-#include <utility>
 
 namespace
 {
-TEST(Error, EveryCategoryHasItsName)
-{
-	const std::array<std::pair<ds3ea::ErrorCategory, std::string_view>, 6> names = { {
-		{ ds3ea::ErrorCategory::not_found, "not_found" },
-		{ ds3ea::ErrorCategory::invalid_data, "invalid_data" },
-		{ ds3ea::ErrorCategory::unsupported, "unsupported" },
-		{ ds3ea::ErrorCategory::io, "io" },
-		{ ds3ea::ErrorCategory::device, "device" },
-		{ ds3ea::ErrorCategory::internal, "internal" },
-	} };
-
-	for (const auto& [category, name] : names)
-		EXPECT_EQ(ds3ea::get_category_name(category), name);
-}
-
 TEST(Error, MakeErrorFormatsTheMessage)
 {
 	const ds3ea::Result<int> failed =

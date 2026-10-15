@@ -1,6 +1,6 @@
 #include "error.hpp"
 #include "result.hpp"
-#include "runtime_exception.hpp"
+#include "runtime_error.hpp"
 
 #include <gtest/gtest.h>
 
@@ -80,7 +80,7 @@ TEST(Result, GetOrThrowThrowsTheSameErrorAndLocation)
 	{
 		ds3ea::get_or_throw(failed);
 	}
-	catch (const ds3ea::RuntimeException& exception)
+	catch (const ds3ea::RuntimeError& exception)
 	{
 		caught = true;
 		EXPECT_EQ(exception.get_error().category, ds3ea::ErrorCategory::not_found);
@@ -93,31 +93,6 @@ TEST(Result, GetOrThrowThrowsTheSameErrorAndLocation)
 
 TEST(Result, GetOrThrowThrowsForVoid)
 {
-	EXPECT_THROW(ds3ea::get_or_throw(check_positive(0)), ds3ea::RuntimeException);
-}
-
-TEST(Result, CapturePassesSuccessThrough)
-{
-	const ds3ea::Result<int> result = ds3ea::capture([] { return 3; });
-	const ds3ea::Result<void> void_result = ds3ea::capture([] {});
-
-	EXPECT_EQ(result.value_or(0), 3);
-	EXPECT_TRUE(void_result.has_value());
-}
-
-TEST(Result, CaptureTurnsTheExceptionIntoTheSameErrorAndLocation)
-{
-	const std::source_location here = std::source_location::current();
-	const ds3ea::Result<int> result = ds3ea::capture([]() -> int
-		{ ds3ea::throw_error(ds3ea::ErrorCategory::device, "no device"); });
-	const ds3ea::Result<void> void_result = ds3ea::capture([]
-		{ ds3ea::throw_error(ds3ea::ErrorCategory::io, "no file"); });
-
-	ASSERT_FALSE(result.has_value());
-	EXPECT_EQ(result.error().category, ds3ea::ErrorCategory::device);
-	EXPECT_EQ(result.error().message, "no device");
-	EXPECT_EQ(result.error().location.line(), here.line() + 2);
-	ASSERT_FALSE(void_result.has_value());
-	EXPECT_EQ(void_result.error().category, ds3ea::ErrorCategory::io);
+	EXPECT_THROW(ds3ea::get_or_throw(check_positive(0)), ds3ea::RuntimeError);
 }
 } // namespace

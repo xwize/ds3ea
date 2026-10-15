@@ -2,7 +2,7 @@
 
 #include "error.hpp"
 #include "logging.hpp"
-#include "runtime_exception.hpp"
+#include "runtime_error.hpp"
 
 #include <exception>
 #include <functional>
@@ -27,7 +27,7 @@ bool call_at_boundary(std::string_view boundary, Func&& func) noexcept
 		std::invoke(std::forward<Func>(func));
 		return true;
 	}
-	catch (const RuntimeException& exception)
+	catch (const RuntimeError& exception)
 	{
 		log::error("{}: {}", boundary, exception.get_error());
 	}

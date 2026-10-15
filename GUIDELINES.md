@@ -92,8 +92,8 @@
 	  make_error(category, "format", args...). Never call .value() on a Result: check and dereference it, chain it
 	  (and_then, map, or_else) or use get_or_throw()
 	- Exceptions for every other failure: I/O, constructors that can't fully initialise, setup, anything that has to
-	  travel up several levels. Throw with throw_error(category, "format", args...), which throws a
-	  RuntimeException; capture() turns one back into a Result
+	  travel up several levels. Throw a RuntimeError (runtime_error.hpp):
+	  throw RuntimeError({ ErrorCategory::io, fmt::format("cannot write {}", path) });
 	- assert (<cassert>) for programmer errors (null where non-null is required, an index out of range, a call in
 	  the wrong state), never Result or an exception: a broken precondition is a bug, not a runtime error
 * Exceptions never escape into ReShade, D3D11, the game or Windows: every boundary (each ReShade event callback,

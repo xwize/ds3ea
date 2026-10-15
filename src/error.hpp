@@ -13,7 +13,7 @@
 /**
  * @file
  * The one description of a failure that both ways of reporting it share: a failed Result<T> (result.hpp) and a
- * RuntimeException (runtime_exception.hpp). Callers branch on its category the same way in both, and every logged
+ * RuntimeError (runtime_error.hpp). Callers branch on its category the same way in both, and every logged
  * error says where it was raised.
  */
 
@@ -36,12 +36,16 @@ enum class ErrorCategory
  */
 std::string_view get_category_name(ErrorCategory category);
 
-/** Why an operation failed, and where. */
+/**
+ * Why an operation failed, and where. A default member initializer's std::source_location::current() records where
+ * the Error is initialised, so throw RuntimeError({ ErrorCategory::io, fmt::format("cannot write {}", path) });
+ * records the throw.
+ */
 struct Error
 {
-	ErrorCategory category;        // What kind of failure, for callers that branch on it
-	std::string message;           // What went wrong, with context (file, shader name...)
-	std::source_location location; // Where make_error or throw_error was called
+	ErrorCategory category;                                           // What kind of failure, for callers to branch on
+	std::string message;                                              // What went wrong, with context (file, shader...)
+	std::source_location location = std::source_location::current(); // Where the Error was initialised
 };
 
 /**
