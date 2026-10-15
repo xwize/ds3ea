@@ -47,13 +47,50 @@
 			"description": "For IDEs that provide the MSVC environment (Visual Studio, CLion, VS Code)",
 			"inherits": "ninja-base",
 			"cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+		},
+		{
+			"name": "clang-base",
+			"hidden": true,
+			"inherits": "ninja-base",
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "clang-cl",
+				"CMAKE_CXX_COMPILER": "clang-cl",
+				"DS3EA_CLANG_TIDY": "OFF"
+			}
+		},
+		{
+			"name": "clang-debug",
+			"displayName": "Ninja Debug (x64 clang-cl)",
+			"description": "Second compiler, for its warnings. Needs the MSVC environment like the ninja-* presets",
+			"inherits": "clang-base",
+			"cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+		},
+		{
+			"name": "clang-release",
+			"displayName": "Ninja Release (x64 clang-cl)",
+			"description": "Second compiler, for its warnings. Needs the MSVC environment like the ninja-* presets",
+			"inherits": "clang-base",
+			"cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+		},
+		{
+			"name": "clang-sanitize",
+			"displayName": "Ninja Sanitize (x64 clang-cl, ASan + UBSan)",
+			"description": "Unit tests under AddressSanitizer and UndefinedBehaviorSanitizer. The add-on DLL isn't built",
+			"inherits": "clang-base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug",
+				"DS3EA_SANITIZE": "ON"
+			}
 		}
 	],
 	"buildPresets": [
 		{ "name": "vs-debug", "displayName": "Debug", "configurePreset": "vs", "configuration": "Debug" },
 		{ "name": "vs-release", "displayName": "Release", "configurePreset": "vs", "configuration": "Release" },
 		{ "name": "ninja-debug", "displayName": "Debug", "configurePreset": "ninja-debug" },
-		{ "name": "ninja-release", "displayName": "Release", "configurePreset": "ninja-release" }
+		{ "name": "ninja-release", "displayName": "Release", "configurePreset": "ninja-release" },
+		{ "name": "clang-debug", "displayName": "Debug", "configurePreset": "clang-debug" },
+		{ "name": "clang-release", "displayName": "Release", "configurePreset": "clang-release" },
+		{ "name": "clang-sanitize", "displayName": "Sanitize", "configurePreset": "clang-sanitize" }
 	],
 	"testPresets": [
 		{
@@ -74,6 +111,9 @@
 			"configuration": "Release"
 		},
 		{ "name": "ninja-debug", "inherits": "test-base", "configurePreset": "ninja-debug" },
-		{ "name": "ninja-release", "inherits": "test-base", "configurePreset": "ninja-release" }
+		{ "name": "ninja-release", "inherits": "test-base", "configurePreset": "ninja-release" },
+		{ "name": "clang-debug", "inherits": "test-base", "configurePreset": "clang-debug" },
+		{ "name": "clang-release", "inherits": "test-base", "configurePreset": "clang-release" },
+		{ "name": "clang-sanitize", "inherits": "test-base", "configurePreset": "clang-sanitize" }
 	]
 }
