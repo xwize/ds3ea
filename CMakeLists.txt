@@ -27,6 +27,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(cmake/reshade.cmake)
+include(cmake/clang_tidy.cmake)
 
 find_package(fmt REQUIRED)
 find_package(inipp REQUIRED)
@@ -47,6 +48,7 @@ add_library(ds3ea_core STATIC
 )
 target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(ds3ea_core PUBLIC fmt::fmt PRIVATE ds3ea_options inipp::inipp reshade::headers scn::scn)
+ds3ea_clang_tidy(ds3ea_core)
 
 add_library(ds3ea SHARED
 	src/addon.cpp
@@ -55,6 +57,7 @@ add_library(ds3ea SHARED
 	src/dll_main.cpp
 )
 target_link_libraries(ds3ea PRIVATE ds3ea_options ds3ea_core reshade::headers fmt::fmt)
+ds3ea_clang_tidy(ds3ea)
 # ReShade loads add-ons by extension, so the DLL is ds3ea.addon64
 set_target_properties(ds3ea PROPERTIES
 	OUTPUT_NAME "ds3ea"

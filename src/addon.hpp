@@ -8,6 +8,7 @@
 
 namespace reshade::api
 {
+// NOLINTNEXTLINE(readability-identifier-naming, cppcoreguidelines-virtual-class-destructor): ReShade's type
 struct device;
 } // namespace reshade::api
 

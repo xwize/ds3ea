@@ -14,6 +14,7 @@
 
 namespace reshade::log
 {
+// NOLINTNEXTLINE(readability-identifier-naming): ReShade's type
 enum class level;
 } // namespace reshade::log
 
@@ -141,6 +142,8 @@ public:
 	{
 		message(level, format, std::forward<Args>(args)...);
 	}
+
+	~Once() = default;
 
 	/** Not copyable or movable: each one stands for one call site. */
 	Once(const Once&) = delete;

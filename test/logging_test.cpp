@@ -4,11 +4,14 @@
 
 #include <reshade.hpp>
 
+#include <array>
+#include <cstddef>
 #include <latch>
 #include <mutex>
 #include <string>
 #include <string_view>
 #include <thread>
+#include <utility>
 #include <vector>
 
 namespace
@@ -57,18 +60,22 @@ TEST_F(LoggingTest, TraceIsDebugWithPrefix)
 
 TEST_F(LoggingTest, OtherLevelsMapOneToOneWithoutPrefix)
 {
-	ds3ea::log::error("text");
-	ds3ea::log::warning("text");
-	ds3ea::log::info("text");
-	ds3ea::log::debug("text");
+	const std::array<std::pair<ds3ea::log::Level, reshade::log::level>, 4> levels = { {
+		{ ds3ea::log::Level::error, reshade::log::level::error },
+		{ ds3ea::log::Level::warning, reshade::log::level::warning },
+		{ ds3ea::log::Level::info, reshade::log::level::info },
+		{ ds3ea::log::Level::debug, reshade::log::level::debug },
+	} };
 
-	ASSERT_EQ(g_logged.size(), 4u);
-	EXPECT_EQ(g_logged.at(0).level, reshade::log::level::error);
-	EXPECT_EQ(g_logged.at(1).level, reshade::log::level::warning);
-	EXPECT_EQ(g_logged.at(2).level, reshade::log::level::info);
-	EXPECT_EQ(g_logged.at(3).level, reshade::log::level::debug);
-	for (const LoggedLine& line : g_logged)
-		EXPECT_EQ(line.text, "text");
+	for (const auto& entry : levels)
+		ds3ea::log::message(entry.first, "text");
+
+	ASSERT_EQ(g_logged.size(), levels.size());
+	for (std::size_t index = 0; index < levels.size(); ++index)
+	{
+		EXPECT_EQ(g_logged.at(index).level, levels.at(index).second);
+		EXPECT_EQ(g_logged.at(index).text, "text");
+	}
 }
 
 TEST_F(LoggingTest, MessageFormatsWithFmt)
@@ -106,6 +113,8 @@ TEST_F(LoggingTest, OnceLogsOnceAcrossThreads)
 	constexpr int k_thread_count = 16;
 	std::latch start(k_thread_count);
 	std::vector<std::thread> threads;
+	threads.reserve(k_thread_count);
+
 	for (int index = 0; index < k_thread_count; ++index)
 	{
 		threads.emplace_back([&start, index]
