@@ -97,7 +97,7 @@
 	- assert (<cassert>) for programmer errors (null where non-null is required, an index out of range, a call in
 	  the wrong state), never Result or an exception: a broken precondition is a bug, not a runtime error
 * Exceptions never escape into ReShade, D3D11, the game or Windows: every boundary (each ReShade event callback,
-  DllMain, add-on init) runs its work through call_at_boundary() (boundary.hpp), which logs and never rethrows.
+  DllMain, add-on init) runs its work through call_and_catch() (boundary.hpp), which logs and never rethrows.
   Where it makes sense the boundary also disables the affected feature
 * A catch that handles only some categories switches on get_error().category, handles those and rethrows the rest
   with throw;. Never swallow unhandled categories in a default:

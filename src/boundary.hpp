@@ -20,7 +20,7 @@ namespace ds3ea
  * @returns True if func returned normally, false if it threw.
  */
 template <typename Func>
-bool call_at_boundary(std::string_view boundary, Func&& func) noexcept
+bool call_and_catch(std::string_view boundary, Func&& func) noexcept
 {
 	try
 	{

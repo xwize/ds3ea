@@ -44,7 +44,7 @@ std::unique_ptr<Addon> Addon::create(HMODULE hmod)
 	// Before construction, so loading the settings can already log
 	log::set_sink(&log::write_to_reshade);
 	std::unique_ptr<Addon> addon;
-	call_at_boundary("add-on init", [&addon, hmod] { addon = std::make_unique<Addon>(hmod, Key()); });
+	call_and_catch("add-on init", [&addon, hmod] { addon = std::make_unique<Addon>(hmod, Key()); });
 	if (addon == nullptr)
 	{
 		log::set_sink(nullptr);
@@ -56,7 +56,7 @@ std::unique_ptr<Addon> Addon::create(HMODULE hmod)
 
 void Addon::on_init_device(reshade::api::device* device)
 {
-	call_at_boundary("init_device", [device]
+	call_and_catch("init_device", [device]
 	{
 		const auto api = static_cast<std::uint32_t>(device->get_api());
 		log::info("{} hello world (device api {:#x})", k_addon_name, api);
