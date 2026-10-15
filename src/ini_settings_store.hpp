@@ -9,9 +9,9 @@ namespace ds3ea
 {
 /**
  * The add-on's settings file (ds3ea.ini): typed values by section and key, read once at construction and written
- * back by save(). A missing file reads as defaults and save() creates it. Keys the code never touches are kept, so
- * a save never drops another feature's (or a newer version's) settings. Comments and blank lines are not kept, and
- * section and key names are case-sensitive.
+ * back by save(). A missing file reads as defaults and save() creates it. Failures to read or write the file are
+ * logged. Keys the code never touches are kept, so a save never drops another feature's (or a newer version's)
+ * settings. Comments and blank lines are not kept, and section and key names are case-sensitive.
  *
  * Not thread-safe: use it from one thread at a time.
  */
@@ -40,7 +40,7 @@ public:
 	 * @param fallback Returned when the key is missing or its value isn't a finite number.
 	 * @returns The stored value, or fallback.
 	 */
-	float get_float(std::string_view section, std::string_view key, float fallback) const;
+	float get_float_or(std::string_view section, std::string_view key, float fallback) const;
 
 	/**
 	 * Reads an integer.
@@ -49,17 +49,16 @@ public:
 	 * @param fallback Returned when the key is missing or its value isn't a whole decimal number that fits an int.
 	 * @returns The stored value, or fallback.
 	 */
-	int get_int(std::string_view section, std::string_view key, int fallback) const;
+	int get_int_or(std::string_view section, std::string_view key, int fallback) const;
 
 	/**
-	 * Reads a bool. Any integer is accepted (non-zero is true, as GetPrivateProfileInt did), as are true and false
-	 * in any case.
+	 * Reads a bool, written as true, false, 1 or 0.
 	 * @param section Section name, without brackets.
 	 * @param key Key within the section.
-	 * @param fallback Returned when the key is missing or its value is neither an integer nor true/false.
+	 * @param fallback Returned when the key is missing or its value is none of those.
 	 * @returns The stored value, or fallback.
 	 */
-	bool get_bool(std::string_view section, std::string_view key, bool fallback) const;
+	bool get_bool_or(std::string_view section, std::string_view key, bool fallback) const;
 
 	/**
 	 * Reads a string, with surrounding whitespace removed.
@@ -68,7 +67,7 @@ public:
 	 * @param fallback Returned when the key is missing.
 	 * @returns The stored value (possibly empty), or fallback.
 	 */
-	std::string get_string(std::string_view section, std::string_view key, std::string_view fallback) const;
+	std::string get_string_or(std::string_view section, std::string_view key, std::string_view fallback) const;
 
 	/**
 	 * Stores a float, written with 3 decimals (e.g. 0.850).
@@ -87,7 +86,7 @@ public:
 	void set_int(std::string_view section, std::string_view key, int value);
 
 	/**
-	 * Stores a bool, written as 1 or 0 like the legacy add-on.
+	 * Stores a bool, written as true or false.
 	 * @param section Section name, without brackets.
 	 * @param key Key within the section.
 	 * @param value Value to store.

@@ -1,16 +1,16 @@
 #include "ini_settings_store.hpp"
+#include "log.hpp"
 
 #include <fmt/format.h>
+#include <fmt/std.h>
 #include <inipp.h>
+#include <scn/scan.h>
 
 #include <algorithm>
-#include <cctype>
-#include <charconv>
 #include <cmath>
 #include <fstream>
 #include <optional>
 #include <system_error>
-#include <type_traits>
 #include <utility>
 
 namespace ds3ea
@@ -19,66 +19,19 @@ namespace
 {
 using Ini = inipp::Ini<char>;
 
-constexpr std::string_view k_utf8_bom = "\xEF\xBB\xBF";
-
 /**
- * Parses the whole of text as a decimal number.
+ * Scans the whole of text as one value of type T.
  * @param text The value as read from the file.
- * @returns The number, or nothing if text has anything else in it, is out of range or (for floats) isn't finite.
+ * @returns The value, or nothing if text doesn't hold one or has anything after it.
  */
 template <typename T>
-std::optional<T> parse_number(const std::string& text)
+std::optional<T> scan_value(std::string_view text)
 {
-	T value = {};
-	const char* const last = text.data() + text.size();
-	const auto [end, error] = std::from_chars(text.data(), last, value);
-	if (error != std::errc() || end != last)
+	auto result = scn::scan<T>(text, "{}");
+	if (!result || !result->range().empty())
 		return std::nullopt;
 
-	if constexpr (std::is_floating_point_v<T>)
-	{
-		if (!std::isfinite(value))
-			return std::nullopt;
-	}
-
-	return value;
-}
-
-/**
- * Parses a bool the way the legacy add-on wrote it (an integer) or as true/false in any case.
- * @param text The value as read from the file.
- * @returns The bool, or nothing if text is neither.
- */
-std::optional<bool> parse_bool(const std::string& text)
-{
-	if (const std::optional<int> number = parse_number<int>(text))
-		return *number != 0;
-
-	std::string lower = text;
-	std::transform(lower.begin(), lower.end(), lower.begin(),
-		[](unsigned char chr) { return static_cast<char>(std::tolower(chr)); });
-	if (lower == "true")
-		return true;
-
-	if (lower == "false")
-		return false;
-
-	return std::nullopt;
-}
-
-/**
- * Skips a UTF-8 byte order mark, which Notepad may add, so it doesn't become part of the first line.
- * @param file The freshly opened file.
- */
-void skip_bom(std::ifstream& file)
-{
-	std::string head(k_utf8_bom.size(), '\0');
-	file.read(head.data(), static_cast<std::streamsize>(head.size()));
-	if (file && head == k_utf8_bom)
-		return;
-
-	file.clear();
-	file.seekg(0);
+	return result->value();
 }
 } // namespace
 
@@ -91,10 +44,19 @@ public:
 	{
 		std::ifstream file(m_path);
 		if (!file)
-			return;
+		{
+			std::error_code error;
+			if (std::filesystem::exists(m_path, error))
+				log_error("Can't open {}; using default settings", m_path);
+			else
+				log_info("{} doesn't exist yet; using default settings", m_path);
 
-		skip_bom(file);
+			return;
+		}
+
 		m_ini.parse(file);
+		for (const std::string& line : m_ini.errors)
+			log_warning("Ignoring line in {}: {}", m_path, line);
 	}
 
 	/**
@@ -128,14 +90,21 @@ public:
 		std::filesystem::path temp_path = m_path;
 		temp_path += L".tmp";
 		if (!write(temp_path))
+		{
+			log_error("Can't write {}; settings not saved", temp_path);
 			return false;
+		}
 
 		std::error_code error;
 		std::filesystem::rename(temp_path, m_path, error);
 		if (!error)
 			return true;
 
+		log_error("Can't replace {} with {}: {}; settings not saved", m_path, temp_path, error.message());
 		std::filesystem::remove(temp_path, error);
+		if (error)
+			log_warning("Can't remove {}: {}", temp_path, error.message());
+
 		return false;
 	}
 
@@ -181,25 +150,30 @@ IniSettingsStore::IniSettingsStore(std::filesystem::path path)
 
 IniSettingsStore::~IniSettingsStore() = default;
 
-float IniSettingsStore::get_float(std::string_view section, std::string_view key, float fallback) const
+float IniSettingsStore::get_float_or(std::string_view section, std::string_view key, float fallback) const
 {
 	const std::string* const text = m_impl->find(section, key);
-	return text != nullptr ? parse_number<float>(*text).value_or(fallback) : fallback;
+	if (text == nullptr)
+		return fallback;
+
+	// inf and nan scan as floats, but no setting can use them
+	const std::optional<float> value = scan_value<float>(*text);
+	return value.has_value() && std::isfinite(*value) ? *value : fallback;
 }
 
-int IniSettingsStore::get_int(std::string_view section, std::string_view key, int fallback) const
+int IniSettingsStore::get_int_or(std::string_view section, std::string_view key, int fallback) const
 {
 	const std::string* const text = m_impl->find(section, key);
-	return text != nullptr ? parse_number<int>(*text).value_or(fallback) : fallback;
+	return text != nullptr ? scan_value<int>(*text).value_or(fallback) : fallback;
 }
 
-bool IniSettingsStore::get_bool(std::string_view section, std::string_view key, bool fallback) const
+bool IniSettingsStore::get_bool_or(std::string_view section, std::string_view key, bool fallback) const
 {
 	const std::string* const text = m_impl->find(section, key);
-	return text != nullptr ? parse_bool(*text).value_or(fallback) : fallback;
+	return text != nullptr ? scan_value<bool>(*text).value_or(fallback) : fallback;
 }
 
-std::string IniSettingsStore::get_string(std::string_view section, std::string_view key,
+std::string IniSettingsStore::get_string_or(std::string_view section, std::string_view key,
 	std::string_view fallback) const
 {
 	const std::string* const text = m_impl->find(section, key);
@@ -218,7 +192,7 @@ void IniSettingsStore::set_int(std::string_view section, std::string_view key, i
 
 void IniSettingsStore::set_bool(std::string_view section, std::string_view key, bool value)
 {
-	m_impl->set(section, key, value ? "1" : "0");
+	m_impl->set(section, key, fmt::format("{}", value));
 }
 
 void IniSettingsStore::set_string(std::string_view section, std::string_view key, std::string_view value)

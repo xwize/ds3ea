@@ -12,8 +12,9 @@ to build on. Coding rules live in [GUIDELINES.md](GUIDELINES.md).
   is too old. Run `conan profile detect` once if you have no default profile.
 
 You don't need to run `conan install` yourself. CMake runs it during configure through
-[cmake-conan](https://github.com/conan-io/cmake-conan) (`cmake/conan_provider.cmake`). It builds `fmt`, `gtest` and
-`inipp` with the static CRT and C++17 to match the project.
+[cmake-conan](https://github.com/conan-io/cmake-conan) (`cmake/conan_provider.cmake`). It builds `fmt`, `gtest`,
+`inipp` and `scnlib` with the static CRT and C++17 to match the project (scnlib as C++20, which its Conan recipe
+requires on MSVC).
 
 ### ReShade headers
 

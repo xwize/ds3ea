@@ -1,4 +1,5 @@
 #include "ini_settings_store.hpp"
+#include "log.hpp"
 
 #include <gtest/gtest.h>
 
@@ -7,10 +8,29 @@
 #include <iterator>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace
 {
-/** Gives each test its own empty folder under the temp directory and removes it afterwards. */
+/** One logged message, as the test sink received it. */
+struct LoggedMessage
+{
+	ds3ea::LogLevel level; // How serious it was
+	std::string text;      // The formatted message
+};
+
+// Filled by capture_log while a test runs; tests run on one thread
+std::vector<LoggedMessage> g_logged;
+
+void capture_log(ds3ea::LogLevel level, std::string_view message)
+{
+	g_logged.push_back({ level, std::string(message) });
+}
+
+/**
+ * Gives each test its own empty folder under the temp directory and removes it afterwards, and captures what the
+ * store logs.
+ */
 class IniSettingsStoreTest : public testing::Test
 {
 protected:
@@ -20,10 +40,13 @@ protected:
 		m_folder = std::filesystem::temp_directory_path() / "ds3ea_tests" / info->test_suite_name() / info->name();
 		std::filesystem::remove_all(m_folder);
 		std::filesystem::create_directories(m_folder);
+		g_logged.clear();
+		ds3ea::set_log_sink(&capture_log);
 	}
 
 	void TearDown() override
 	{
+		ds3ea::set_log_sink(nullptr);
 		std::error_code error;
 		std::filesystem::remove_all(m_folder, error);
 	}
@@ -45,6 +68,15 @@ protected:
 		return std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 	}
 
+	static bool has_logged(ds3ea::LogLevel level)
+	{
+		for (const LoggedMessage& message : g_logged)
+			if (message.level == level)
+				return true;
+
+		return false;
+	}
+
 	std::filesystem::path m_folder;
 };
 
@@ -52,11 +84,13 @@ TEST_F(IniSettingsStoreTest, MissingFileReadsDefaults)
 {
 	const ds3ea::IniSettingsStore store(get_ini_path());
 
-	EXPECT_FLOAT_EQ(store.get_float("Tonemapper", "Exposure", 0.85f), 0.85f);
-	EXPECT_EQ(store.get_int("Display", "WindowWidth", 1920), 1920);
-	EXPECT_TRUE(store.get_bool("DLSS", "Enabled", true));
-	EXPECT_EQ(store.get_string("DLSS", "Mode", "Quality"), "Quality");
+	EXPECT_FLOAT_EQ(store.get_float_or("Tonemapper", "Exposure", 0.85f), 0.85f);
+	EXPECT_EQ(store.get_int_or("Display", "WindowWidth", 1920), 1920);
+	EXPECT_TRUE(store.get_bool_or("DLSS", "Enabled", true));
+	EXPECT_EQ(store.get_string_or("DLSS", "Mode", "Quality"), "Quality");
 	EXPECT_FALSE(std::filesystem::exists(get_ini_path()));
+	EXPECT_TRUE(has_logged(ds3ea::LogLevel::info));
+	EXPECT_FALSE(has_logged(ds3ea::LogLevel::error));
 }
 
 TEST_F(IniSettingsStoreTest, MissingKeyOrSectionReadsDefault)
@@ -64,8 +98,8 @@ TEST_F(IniSettingsStoreTest, MissingKeyOrSectionReadsDefault)
 	write_file("[Tonemapper]\nExposure=0.500\n");
 	const ds3ea::IniSettingsStore store(get_ini_path());
 
-	EXPECT_FLOAT_EQ(store.get_float("Tonemapper", "WhitePoint", 11.0f), 11.0f);
-	EXPECT_FLOAT_EQ(store.get_float("Other", "Exposure", 2.0f), 2.0f);
+	EXPECT_FLOAT_EQ(store.get_float_or("Tonemapper", "WhitePoint", 11.0f), 11.0f);
+	EXPECT_FLOAT_EQ(store.get_float_or("Other", "Exposure", 2.0f), 2.0f);
 }
 
 TEST_F(IniSettingsStoreTest, GarbageValuesReadDefault)
@@ -74,28 +108,29 @@ TEST_F(IniSettingsStoreTest, GarbageValuesReadDefault)
 			   "Bool=maybe\nEmpty=\n");
 	const ds3ea::IniSettingsStore store(get_ini_path());
 
-	EXPECT_FLOAT_EQ(store.get_float("Test", "Float", 1.0f), 1.0f);
-	EXPECT_FLOAT_EQ(store.get_float("Test", "Trailing", 1.0f), 1.0f);
-	EXPECT_FLOAT_EQ(store.get_float("Test", "Infinite", 1.0f), 1.0f);
-	EXPECT_FLOAT_EQ(store.get_float("Test", "Empty", 1.0f), 1.0f);
-	EXPECT_EQ(store.get_int("Test", "Int", 7), 7);
-	EXPECT_EQ(store.get_int("Test", "TooBig", 7), 7);
-	EXPECT_EQ(store.get_int("Test", "Fraction", 7), 7);
-	EXPECT_EQ(store.get_int("Test", "Empty", 7), 7);
-	EXPECT_TRUE(store.get_bool("Test", "Bool", true));
-	EXPECT_FALSE(store.get_bool("Test", "Empty", false));
+	EXPECT_FLOAT_EQ(store.get_float_or("Test", "Float", 1.0f), 1.0f);
+	EXPECT_FLOAT_EQ(store.get_float_or("Test", "Trailing", 1.0f), 1.0f);
+	EXPECT_FLOAT_EQ(store.get_float_or("Test", "Infinite", 1.0f), 1.0f);
+	EXPECT_FLOAT_EQ(store.get_float_or("Test", "Empty", 1.0f), 1.0f);
+	EXPECT_EQ(store.get_int_or("Test", "Int", 7), 7);
+	EXPECT_EQ(store.get_int_or("Test", "TooBig", 7), 7);
+	EXPECT_EQ(store.get_int_or("Test", "Fraction", 7), 7);
+	EXPECT_EQ(store.get_int_or("Test", "Empty", 7), 7);
+	EXPECT_TRUE(store.get_bool_or("Test", "Bool", true));
+	EXPECT_FALSE(store.get_bool_or("Test", "Empty", false));
 }
 
-TEST_F(IniSettingsStoreTest, BoolsAcceptIntegersAndWords)
+TEST_F(IniSettingsStoreTest, BoolsAcceptWordsAndDigits)
 {
-	write_file("[Test]\nOne=1\nZero=0\nTwo=2\nUpper=TRUE\nLower=false\n");
+	write_file("[Test]\nTrue=true\nFalse=false\nOne=1\nZero=0\nTwo=2\nUpper=TRUE\n");
 	const ds3ea::IniSettingsStore store(get_ini_path());
 
-	EXPECT_TRUE(store.get_bool("Test", "One", false));
-	EXPECT_FALSE(store.get_bool("Test", "Zero", true));
-	EXPECT_TRUE(store.get_bool("Test", "Two", false));
-	EXPECT_TRUE(store.get_bool("Test", "Upper", false));
-	EXPECT_FALSE(store.get_bool("Test", "Lower", true));
+	EXPECT_TRUE(store.get_bool_or("Test", "True", false));
+	EXPECT_FALSE(store.get_bool_or("Test", "False", true));
+	EXPECT_TRUE(store.get_bool_or("Test", "One", false));
+	EXPECT_FALSE(store.get_bool_or("Test", "Zero", true));
+	EXPECT_FALSE(store.get_bool_or("Test", "Two", false));
+	EXPECT_FALSE(store.get_bool_or("Test", "Upper", false));
 }
 
 TEST_F(IniSettingsStoreTest, ValuesRoundTripThroughSave)
@@ -110,10 +145,10 @@ TEST_F(IniSettingsStoreTest, ValuesRoundTripThroughSave)
 	}
 
 	const ds3ea::IniSettingsStore store(get_ini_path());
-	EXPECT_FLOAT_EQ(store.get_float("Tonemapper", "Exposure", 0.0f), 1.25f);
-	EXPECT_EQ(store.get_int("Display", "WindowWidth", 0), -2560);
-	EXPECT_FALSE(store.get_bool("DLSS", "Enabled", true));
-	EXPECT_EQ(store.get_string("DLSS", "Mode", ""), "Balanced");
+	EXPECT_FLOAT_EQ(store.get_float_or("Tonemapper", "Exposure", 0.0f), 1.25f);
+	EXPECT_EQ(store.get_int_or("Display", "WindowWidth", 0), -2560);
+	EXPECT_FALSE(store.get_bool_or("DLSS", "Enabled", true));
+	EXPECT_EQ(store.get_string_or("DLSS", "Mode", ""), "Balanced");
 	EXPECT_FALSE(std::filesystem::exists(m_folder / "ds3ea.ini.tmp"));
 }
 
@@ -129,7 +164,7 @@ TEST_F(IniSettingsStoreTest, FloatsAreWrittenWithThreeDecimals)
 	EXPECT_NE(text.find("WhitePoint=11.000\n"), std::string::npos) << text;
 }
 
-TEST_F(IniSettingsStoreTest, BoolsAreWrittenAsIntegers)
+TEST_F(IniSettingsStoreTest, BoolsAreWrittenAsWords)
 {
 	ds3ea::IniSettingsStore store(get_ini_path());
 	store.set_bool("Tonemapper", "ApplyLUT", true);
@@ -137,8 +172,8 @@ TEST_F(IniSettingsStoreTest, BoolsAreWrittenAsIntegers)
 	ASSERT_TRUE(store.save());
 
 	const std::string text = read_file();
-	EXPECT_NE(text.find("ApplyLUT=1\n"), std::string::npos) << text;
-	EXPECT_NE(text.find("Dither=0\n"), std::string::npos) << text;
+	EXPECT_NE(text.find("ApplyLUT=true\n"), std::string::npos) << text;
+	EXPECT_NE(text.find("Dither=false\n"), std::string::npos) << text;
 }
 
 TEST_F(IniSettingsStoreTest, SaveKeepsUntouchedSectionsAndKeys)
@@ -151,32 +186,36 @@ TEST_F(IniSettingsStoreTest, SaveKeepsUntouchedSectionsAndKeys)
 	}
 
 	const ds3ea::IniSettingsStore store(get_ini_path());
-	EXPECT_EQ(store.get_int("", "Version", 0), 2);
-	EXPECT_EQ(store.get_string("Other", "Name", ""), "kept");
-	EXPECT_FLOAT_EQ(store.get_float("Tonemapper", "Bloom", 0.0f), 0.5f);
-	EXPECT_FLOAT_EQ(store.get_float("Tonemapper", "Exposure", 0.0f), 1.0f);
+	EXPECT_EQ(store.get_int_or("", "Version", 0), 2);
+	EXPECT_EQ(store.get_string_or("Other", "Name", ""), "kept");
+	EXPECT_FLOAT_EQ(store.get_float_or("Tonemapper", "Bloom", 0.0f), 0.5f);
+	EXPECT_FLOAT_EQ(store.get_float_or("Tonemapper", "Exposure", 0.0f), 1.0f);
 	EXPECT_EQ(read_file().find("[]"), std::string::npos);
 }
 
-TEST_F(IniSettingsStoreTest, LegacyFileReads)
+TEST_F(IniSettingsStoreTest, HandEditedFileReads)
 {
-	// As the legacy add-on's WritePrivateProfileString left it: CRLF line endings, spaces around = by hand
+	// As a text editor leaves it: CRLF line endings, spaces around =, a comment and a blank line
 	write_file("[Tonemapper]\r\nExposure=0.850\r\nWhitePoint = 11.000\r\nApplyLUT=1\r\n\r\n"
 			   "; A comment\r\n[DLSS]\r\nInjectionMethod=BeforeCustomTonemapper\r\n");
 	const ds3ea::IniSettingsStore store(get_ini_path());
 
-	EXPECT_FLOAT_EQ(store.get_float("Tonemapper", "Exposure", 0.0f), 0.85f);
-	EXPECT_FLOAT_EQ(store.get_float("Tonemapper", "WhitePoint", 0.0f), 11.0f);
-	EXPECT_TRUE(store.get_bool("Tonemapper", "ApplyLUT", false));
-	EXPECT_EQ(store.get_string("DLSS", "InjectionMethod", ""), "BeforeCustomTonemapper");
+	EXPECT_FLOAT_EQ(store.get_float_or("Tonemapper", "Exposure", 0.0f), 0.85f);
+	EXPECT_FLOAT_EQ(store.get_float_or("Tonemapper", "WhitePoint", 0.0f), 11.0f);
+	EXPECT_TRUE(store.get_bool_or("Tonemapper", "ApplyLUT", false));
+	EXPECT_EQ(store.get_string_or("DLSS", "InjectionMethod", ""), "BeforeCustomTonemapper");
+	EXPECT_TRUE(g_logged.empty());
 }
 
-TEST_F(IniSettingsStoreTest, ByteOrderMarkIsSkipped)
+TEST_F(IniSettingsStoreTest, MalformedLinesAreLogged)
 {
-	write_file("\xEF\xBB\xBF[Tonemapper]\nExposure=0.500\n");
+	write_file("[Test]\nNoEquals\n[Unclosed\nValue=1\n");
 	const ds3ea::IniSettingsStore store(get_ini_path());
 
-	EXPECT_FLOAT_EQ(store.get_float("Tonemapper", "Exposure", 0.0f), 0.5f);
+	EXPECT_EQ(store.get_int_or("Test", "Value", 0), 1);
+	ASSERT_EQ(g_logged.size(), 2u);
+	EXPECT_EQ(g_logged.at(0).level, ds3ea::LogLevel::warning);
+	EXPECT_NE(g_logged.at(0).text.find("NoEquals"), std::string::npos) << g_logged.at(0).text;
 }
 
 TEST_F(IniSettingsStoreTest, LineBreaksInStringsDontAddKeys)
@@ -188,8 +227,8 @@ TEST_F(IniSettingsStoreTest, LineBreaksInStringsDontAddKeys)
 	}
 
 	const ds3ea::IniSettingsStore store(get_ini_path());
-	EXPECT_EQ(store.get_string("Test", "Text", ""), "one Injected=1");
-	EXPECT_EQ(store.get_string("Test", "Injected", "none"), "none");
+	EXPECT_EQ(store.get_string_or("Test", "Text", ""), "one Injected=1");
+	EXPECT_EQ(store.get_string_or("Test", "Injected", "none"), "none");
 }
 
 TEST_F(IniSettingsStoreTest, NonAsciiPathWorks)
@@ -204,7 +243,7 @@ TEST_F(IniSettingsStoreTest, NonAsciiPathWorks)
 	}
 
 	const ds3ea::IniSettingsStore store(path);
-	EXPECT_EQ(store.get_int("Test", "Value", 0), 42);
+	EXPECT_EQ(store.get_int_or("Test", "Value", 0), 42);
 	EXPECT_EQ(store.get_path(), path);
 }
 
@@ -214,5 +253,6 @@ TEST_F(IniSettingsStoreTest, SaveIntoMissingFolderFails)
 	store.set_int("Test", "Value", 1);
 
 	EXPECT_FALSE(store.save());
+	EXPECT_TRUE(has_logged(ds3ea::LogLevel::error));
 }
 } // namespace

@@ -7,9 +7,11 @@ cmake_minimum_required(VERSION 3.25)
 if(NOT DEFINED CMAKE_PROJECT_TOP_LEVEL_INCLUDES)
 	set(CMAKE_PROJECT_TOP_LEVEL_INCLUDES "${CMAKE_CURRENT_LIST_DIR}/cmake/conan_provider.cmake")
 endif()
-# Stop Conan writing a CMakeUserPresets.json into the source tree, which belongs to the developer
-set(CONAN_INSTALL_ARGS "--build=missing;-c=tools.cmake.cmaketoolchain:user_presets=" CACHE STRING
-	"Command line arguments for conan install")
+# Stop Conan writing a CMakeUserPresets.json into the source tree, which belongs to the developer. scnlib's Conan
+# recipe refuses C++17 on MSVC, so only scnlib is built as C++20; its headers compile as C++17.
+set(CONAN_INSTALL_ARGS
+	"--build=missing;-c=tools.cmake.cmaketoolchain:user_presets=;-s:h=scnlib/*:compiler.cppstd=20"
+	CACHE STRING "Command line arguments for conan install")
 
 # Static CRT, same as ReShade, so the add-on has no VC redistributable dependency. Set before project() so Conan
 # builds its packages with the matching runtime.
@@ -30,20 +32,23 @@ include(cmake/reshade.cmake)
 
 find_package(fmt REQUIRED)
 find_package(inipp REQUIRED)
+find_package(scn REQUIRED)
 
 # Compiler settings shared by the add-on and its tests
 add_library(ds3ea_options INTERFACE)
 target_compile_options(ds3ea_options INTERFACE /W4 /WX /permissive- /utf-8 /external:W0)
 target_compile_definitions(ds3ea_options INTERFACE UNICODE _UNICODE)
 
-# Code without ReShade or game dependencies, shared by the add-on and its tests. inipp is linked PRIVATE so only
-# ini_settings_store.cpp sees it.
+# Code without ReShade or game dependencies, shared by the add-on and its tests. inipp and scnlib are linked PRIVATE
+# so only ini_settings_store.cpp sees them.
 add_library(ds3ea_core STATIC
 	src/ini_settings_store.cpp
 	src/ini_settings_store.hpp
+	src/log.cpp
+	src/log.hpp
 )
 target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src")
-target_link_libraries(ds3ea_core PRIVATE ds3ea_options fmt::fmt inipp::inipp)
+target_link_libraries(ds3ea_core PUBLIC fmt::fmt PRIVATE ds3ea_options inipp::inipp scn::scn)
 
 add_library(ds3ea SHARED
 	src/addon.cpp
