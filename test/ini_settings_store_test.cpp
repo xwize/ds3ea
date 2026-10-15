@@ -3,6 +3,8 @@
 
 #include <gtest/gtest.h>
 
+#include <reshade.hpp>
+
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -15,14 +17,14 @@ namespace
 /** One logged message, as the test sink received it. */
 struct LoggedMessage
 {
-	ds3ea::log::Level level; // How serious it was
-	std::string text;        // The formatted message
+	reshade::log::level level; // How serious it was
+	std::string text;          // The line as ReShade would get it
 };
 
 // Filled by capture_log while a test runs; tests run on one thread
 std::vector<LoggedMessage> g_logged;
 
-void capture_log(ds3ea::log::Level level, std::string_view message)
+void capture_log(reshade::log::level level, std::string_view message)
 {
 	g_logged.push_back({ level, std::string(message) });
 }
@@ -68,7 +70,7 @@ protected:
 		return std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 	}
 
-	static bool has_logged(ds3ea::log::Level level)
+	static bool has_logged(reshade::log::level level)
 	{
 		for (const LoggedMessage& message : g_logged)
 			if (message.level == level)
@@ -89,8 +91,8 @@ TEST_F(IniSettingsStoreTest, MissingFileReadsDefaults)
 	EXPECT_TRUE(store.get_bool_or("DLSS", "Enabled", true));
 	EXPECT_EQ(store.get_string_or("DLSS", "Mode", "Quality"), "Quality");
 	EXPECT_FALSE(std::filesystem::exists(get_ini_path()));
-	EXPECT_TRUE(has_logged(ds3ea::log::Level::info));
-	EXPECT_FALSE(has_logged(ds3ea::log::Level::error));
+	EXPECT_TRUE(has_logged(reshade::log::level::info));
+	EXPECT_FALSE(has_logged(reshade::log::level::error));
 }
 
 TEST_F(IniSettingsStoreTest, MissingKeyOrSectionReadsDefault)
@@ -214,7 +216,7 @@ TEST_F(IniSettingsStoreTest, MalformedLinesAreLogged)
 
 	EXPECT_EQ(store.get_int_or("Test", "Value", 0), 1);
 	ASSERT_EQ(g_logged.size(), 2u);
-	EXPECT_EQ(g_logged.at(0).level, ds3ea::log::Level::warning);
+	EXPECT_EQ(g_logged.at(0).level, reshade::log::level::warning);
 	EXPECT_NE(g_logged.at(0).text.find("NoEquals"), std::string::npos) << g_logged.at(0).text;
 }
 
@@ -240,6 +242,6 @@ TEST_F(IniSettingsStoreTest, SaveIntoMissingFolderFails)
 	store.set_int("Test", "Value", 1);
 
 	EXPECT_FALSE(store.save());
-	EXPECT_TRUE(has_logged(ds3ea::log::Level::error));
+	EXPECT_TRUE(has_logged(reshade::log::level::error));
 }
 } // namespace

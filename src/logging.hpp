@@ -2,16 +2,14 @@
 
 #include <fmt/format.h>
 
-#include <atomic>
-#include <string>
 #include <string_view>
 #include <utility>
 
 /**
  * @file
- * fmt-formatted logging for the whole add-on, instead of calling reshade::log::message directly. Messages go to a
- * sink: the add-on installs write_to_reshade() at load, and with no sink installed (as in the tests) messages are
- * dropped. This header doesn't include reshade.hpp; logging.cpp is the only logging code that does.
+ * fmt-formatted logging for the whole add-on, instead of calling reshade::log::message directly. Lines go to a sink:
+ * the add-on installs write_to_reshade() at load, and with no sink installed (as in the tests) they are dropped.
+ * This header doesn't include reshade.hpp; logging.cpp is the only logging code that does.
  */
 
 namespace reshade::log
@@ -31,42 +29,27 @@ enum class Level
 	trace,   // Finer detail than debug, e.g. per draw
 };
 
-/** Receives each formatted message. Called from whichever thread logged, so it must be thread-safe. */
-using Sink = void (*)(Level level, std::string_view message);
-
-/** A message as ReShade receives it: its level and the text with any prefix for our extra levels. */
-struct ReshadeLine
-{
-	reshade::log::level level; // ReShade's level (trace becomes debug)
-	std::string text;          // The message, with "T: " in front for trace
-};
+/** Receives each line as ReShade gets it. Called from whichever thread logged, so it must be thread-safe. */
+using Sink = void (*)(reshade::log::level level, std::string_view line);
 
 /**
- * Installs the sink that receives every message from now on.
- * @param sink The new sink, or nullptr to drop messages.
+ * Installs the sink that receives every line from now on.
+ * @param sink The new sink, or nullptr to drop lines.
  */
 void set_sink(Sink sink);
 
 /**
- * Turns one of our messages into what ReShade gets: levels map 1:1 except trace, which becomes debug with a "T: "
- * prefix.
- * @param level How serious the message is.
- * @param message The formatted text.
- * @returns ReShade's level and the line to write.
+ * The add-on's sink: writes a line to ReShade's log. Only call it while ReShade has the add-on loaded.
+ * @param level ReShade's level for the line.
+ * @param line The text, without a trailing line break.
  */
-ReshadeLine to_reshade_line(Level level, std::string_view message);
+void write_to_reshade(reshade::log::level level, std::string_view line);
 
 /**
- * The add-on's sink: forwards a message to ReShade's log. Only call it while ReShade has the add-on loaded.
+ * Maps a message onto ReShade's levels (trace becomes debug with a "T: " prefix) and sends it to the installed
+ * sink, if any.
  * @param level How serious the message is.
- * @param message The text, without a trailing line break.
- */
-void write_to_reshade(Level level, std::string_view message);
-
-/**
- * Sends a message to the installed sink, if any.
- * @param level How serious the message is.
- * @param message The text, without a trailing line break.
+ * @param message The formatted text, without a trailing line break.
  */
 void write(Level level, std::string_view message);
 
@@ -138,31 +121,32 @@ void trace(fmt::format_string<Args...> format, Args&&... args)
 }
 
 /**
- * Logs its message the first time only; later calls do nothing, without formatting. Thread-safe: when several
- * threads call it at once, exactly one logs. For messages that would otherwise flood the log every frame:
+ * A message logged once, for call sites that would otherwise flood the log every frame. Declare it as a static
+ * local: its constructor logs, and C++ constructs a static local only the first time control reaches it, so later
+ * passes neither format nor log. That is thread-safe: when several threads arrive at once, one constructs it and
+ * the others wait.
  *
- *     static log::Once missing_shader;
- *     missing_shader.message(log::Level::warning, "tonemap shader {} not found", name);
+ *     static const log::Once missing_shader(log::Level::warning, "tonemap shader {} not found", name);
  */
 class Once
 {
 public:
 	/**
-	 * Formats and logs one line, unless this object has logged before.
+	 * Formats and logs one line.
 	 * @param level How serious the message is.
 	 * @param format fmt format string, checked at compile time.
 	 * @param args Values for the format string.
 	 */
 	template <typename... Args>
-	void message(Level level, fmt::format_string<Args...> format, Args&&... args)
+	Once(Level level, fmt::format_string<Args...> format, Args&&... args)
 	{
-		if (m_logged.exchange(true))
-			return;
-
-		log::message(level, format, std::forward<Args>(args)...);
+		message(level, format, std::forward<Args>(args)...);
 	}
 
-private:
-	std::atomic<bool> m_logged = false;
+	/** Not copyable or movable: each one stands for one call site. */
+	Once(const Once&) = delete;
+	Once& operator=(const Once&) = delete;
+	Once(Once&&) = delete;
+	Once& operator=(Once&&) = delete;
 };
 } // namespace ds3ea::log

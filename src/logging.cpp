@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <string>
+#include <utility>
 
 namespace ds3ea::log
 {
@@ -11,14 +12,13 @@ namespace
 {
 // Set by the add-on at load and cleared at unload; atomic so any thread can log while it changes
 std::atomic<Sink> g_sink = nullptr;
-} // namespace
 
-void set_sink(Sink sink)
-{
-	g_sink.store(sink);
-}
-
-ReshadeLine to_reshade_line(Level level, std::string_view message)
+/**
+ * @param level How serious the message is.
+ * @param message The formatted text.
+ * @returns ReShade's level and the line to write: levels map 1:1 except trace, which becomes debug with "T: ".
+ */
+std::pair<reshade::log::level, std::string> to_reshade_line(Level level, std::string_view message)
 {
 	switch (level)
 	{
@@ -36,17 +36,25 @@ ReshadeLine to_reshade_line(Level level, std::string_view message)
 
 	return { reshade::log::level::info, std::string(message) };
 }
+} // namespace
 
-void write_to_reshade(Level level, std::string_view message)
+void set_sink(Sink sink)
 {
-	const ReshadeLine line = to_reshade_line(level, message);
-	reshade::log::message(line.level, line.text.c_str());
+	g_sink.store(sink);
+}
+
+void write_to_reshade(reshade::log::level level, std::string_view line)
+{
+	reshade::log::message(level, std::string(line).c_str());
 }
 
 void write(Level level, std::string_view message)
 {
 	const Sink sink = g_sink.load();
-	if (sink != nullptr)
-		sink(level, message);
+	if (sink == nullptr)
+		return;
+
+	const auto [reshade_level, line] = to_reshade_line(level, message);
+	sink(reshade_level, line);
 }
 } // namespace ds3ea::log
