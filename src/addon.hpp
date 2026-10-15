@@ -8,7 +8,8 @@
 
 namespace reshade::api
 {
-struct device; // NOLINT(readability-identifier-naming, cppcoreguidelines-virtual-class-destructor): ReShade's type
+// NOLINTNEXTLINE(readability-identifier-naming, cppcoreguidelines-virtual-class-destructor): ReShade's type
+struct device;
 } // namespace reshade::api
 
 namespace ds3ea

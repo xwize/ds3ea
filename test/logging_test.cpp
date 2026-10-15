@@ -66,6 +66,7 @@ TEST_F(LoggingTest, OtherLevelsMapOneToOneWithoutPrefix)
 		{ ds3ea::log::Level::info, reshade::log::level::info },
 		{ ds3ea::log::Level::debug, reshade::log::level::debug },
 	} };
+
 	for (const auto& entry : levels)
 		ds3ea::log::message(entry.first, "text");
 
@@ -113,6 +114,7 @@ TEST_F(LoggingTest, OnceLogsOnceAcrossThreads)
 	std::latch start(k_thread_count);
 	std::vector<std::thread> threads;
 	threads.reserve(k_thread_count);
+
 	for (int index = 0; index < k_thread_count; ++index)
 	{
 		threads.emplace_back([&start, index]

@@ -14,7 +14,8 @@
 
 namespace reshade::log
 {
-enum class level; // NOLINT(readability-identifier-naming): ReShade's type
+// NOLINTNEXTLINE(readability-identifier-naming): ReShade's type
+enum class level;
 } // namespace reshade::log
 
 namespace ds3ea::log

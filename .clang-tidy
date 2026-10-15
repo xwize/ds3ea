@@ -79,15 +79,15 @@ CheckOptions:
   readability-identifier-naming.PrivateMemberPrefix: m_
   readability-identifier-naming.ProtectedMemberCase: lower_case
   readability-identifier-naming.ProtectedMemberPrefix: m_
-  # Names are at least 3 characters, except coordinates (x y z dx dy dz), loop counters (i j k), e and n
+  # Names are at least 3 characters, except coordinates (x y z w dx dy dz dw), loop counters (i j k), e and n
   readability-identifier-length.MinimumVariableNameLength: 3
   readability-identifier-length.MinimumParameterNameLength: 3
   readability-identifier-length.MinimumLoopCounterNameLength: 3
   readability-identifier-length.MinimumExceptionNameLength: 3
-  readability-identifier-length.IgnoredVariableNames: '^(x|y|z|dx|dy|dz|i|j|k|e|n)$'
-  readability-identifier-length.IgnoredParameterNames: '^(x|y|z|dx|dy|dz|i|j|k|e|n)$'
-  readability-identifier-length.IgnoredLoopCounterNames: '^(x|y|z|dx|dy|dz|i|j|k|e|n)$'
-  readability-identifier-length.IgnoredExceptionVariableNames: '^(x|y|z|dx|dy|dz|i|j|k|e|n)$'
+  readability-identifier-length.IgnoredVariableNames: '^(x|y|z|w|dx|dy|dz|dw|i|j|k|e|n)$'
+  readability-identifier-length.IgnoredParameterNames: '^(x|y|z|w|dx|dy|dz|dw|i|j|k|e|n)$'
+  readability-identifier-length.IgnoredLoopCounterNames: '^(x|y|z|w|dx|dy|dz|dw|i|j|k|e|n)$'
+  readability-identifier-length.IgnoredExceptionVariableNames: '^(x|y|z|w|dx|dy|dz|dw|i|j|k|e|n)$'
   # Functions stay simple: cognitive complexity at most 25, nesting at most 4 levels, at most 6 parameters
   readability-function-cognitive-complexity.Threshold: 25
   readability-function-size.NestingThreshold: 4

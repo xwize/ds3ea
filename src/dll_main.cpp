@@ -9,9 +9,10 @@
  * ReShade reads these exports for the Add-ons tab. The names are fixed by ReShade's add-on API, so they don't follow
  * our naming rules.
  */
-extern "C" __declspec(dllexport) const char* NAME = ds3ea::k_addon_name; // NOLINT(readability-identifier-naming)
-extern "C" __declspec(dllexport) const char* DESCRIPTION = // NOLINT(readability-identifier-naming)
-	ds3ea::k_addon_description;
+// NOLINTNEXTLINE(readability-identifier-naming)
+extern "C" __declspec(dllexport) const char* NAME = ds3ea::k_addon_name;
+// NOLINTNEXTLINE(readability-identifier-naming)
+extern "C" __declspec(dllexport) const char* DESCRIPTION = ds3ea::k_addon_description;
 
 namespace
 {

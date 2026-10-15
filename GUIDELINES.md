@@ -1,5 +1,5 @@
 * Prefer reference/pointer hugging the type e.g. int* var; over int *var;
-* Variable names must be at least 3 letters, except x y z dx dy dz i j k e n (clang-tidy)
+* Variable names must be at least 3 letters, except x y z w dx dy dz dw i j k e n (clang-tidy)
 * Functions stay simple: cognitive complexity at most 25, nesting at most 4 levels, at most 6 parameters. Split long
   functions into named helpers and group related parameters in a struct; only a fixed API signature (e.g. a Win32
   hook) may exceed these, with a comment giving the reason (clang-tidy)
