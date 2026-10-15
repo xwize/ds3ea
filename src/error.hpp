@@ -43,9 +43,12 @@ std::string_view get_category_name(ErrorCategory category);
  */
 struct Error
 {
-	ErrorCategory category;                                           // What kind of failure, for callers to branch on
-	std::string message;                                              // What went wrong, with context (file, shader...)
-	std::source_location location = std::source_location::current(); // Where the Error was initialised
+	// What kind of failure, for callers that branch on it
+	ErrorCategory category;
+	// What went wrong, with context (file, shader name...)
+	std::string message;
+	// Where the Error was initialised
+	std::source_location location = std::source_location::current();
 };
 
 /**
