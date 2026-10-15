@@ -71,5 +71,5 @@ Settings live in `ds3ea.ini` in the game's working directory (the `Game` folder)
 settings use their defaults.
 
 To test a build in the game without doing these steps by hand, run `python scripts/launch_game.py`. It installs the
-newest build, runs the game for 30 seconds, closes it and prints the run's `ReShade.log`. See
-[scripts/README.md](scripts/README.md).
+newest build, starts the game and loads the last save, closes it after 60 seconds and prints the run's `ReShade.log`.
+See [scripts/README.md](scripts/README.md).
