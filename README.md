@@ -67,3 +67,7 @@ command line, run them from a *x64 Native Tools* prompt. Their output goes to `b
 
 Settings live in `ds3ea.ini` in the game's working directory (the `Game` folder). The file is optional: missing
 settings use their defaults.
+
+To test a build in the game without doing these steps by hand, run `python scripts/launch_game.py`. It installs the
+newest build, runs the game for 30 seconds, closes it and prints the run's `ReShade.log`. See
+[scripts/README.md](scripts/README.md).
