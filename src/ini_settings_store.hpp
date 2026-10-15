@@ -94,7 +94,8 @@ public:
 	void set_bool(std::string_view section, std::string_view key, bool value);
 
 	/**
-	 * Stores a string. Line breaks become spaces, and surrounding whitespace doesn't survive a save and reload.
+	 * Stores a string. It must not contain line breaks (asserted), and surrounding whitespace doesn't survive a save
+	 * and reload.
 	 * @param section Section name, without brackets.
 	 * @param key Key within the section.
 	 * @param value Value to store.

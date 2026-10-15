@@ -5,7 +5,7 @@
 #include <fmt/std.h>
 #include <inipp.h>
 
-#include <algorithm>
+#include <cassert>
 #include <fstream>
 #include <system_error>
 #include <utility>
@@ -195,10 +195,8 @@ void IniSettingsStore::set_bool(std::string_view section, std::string_view key, 
 
 void IniSettingsStore::set_string(std::string_view section, std::string_view key, std::string_view value)
 {
-	// A line break would end the line on save and turn the rest of the value into a line of its own
-	std::string line(value);
-	std::replace_if(line.begin(), line.end(), [](char chr) { return chr == '\r' || chr == '\n'; }, ' ');
-	m_impl->set(section, key, std::move(line));
+	assert(value.find_first_of("\r\n") == std::string_view::npos && "Bug: Putting text with newlines into the ini");
+	m_impl->set(section, key, std::string(value));
 }
 
 bool IniSettingsStore::save() const

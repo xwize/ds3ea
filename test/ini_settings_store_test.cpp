@@ -218,19 +218,6 @@ TEST_F(IniSettingsStoreTest, MalformedLinesAreLogged)
 	EXPECT_NE(g_logged.at(0).text.find("NoEquals"), std::string::npos) << g_logged.at(0).text;
 }
 
-TEST_F(IniSettingsStoreTest, LineBreaksInStringsDontAddKeys)
-{
-	{
-		ds3ea::IniSettingsStore store(get_ini_path());
-		store.set_string("Test", "Text", "one\nInjected=1");
-		ASSERT_TRUE(store.save());
-	}
-
-	const ds3ea::IniSettingsStore store(get_ini_path());
-	EXPECT_EQ(store.get_string_or("Test", "Text", ""), "one Injected=1");
-	EXPECT_EQ(store.get_string_or("Test", "Injected", "none"), "none");
-}
-
 TEST_F(IniSettingsStoreTest, NonAsciiPathWorks)
 {
 	const std::filesystem::path folder = m_folder / L"Dark Souls Ü";
