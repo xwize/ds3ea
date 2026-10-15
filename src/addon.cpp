@@ -1,8 +1,8 @@
 #include "addon.hpp"
 #include "addon_info.hpp"
-#include "boundary.hpp"
-#include "ini_settings_store.hpp"
-#include "logging.hpp"
+#include "utils/boundary.hpp"
+#include "utils/ini_settings_store.hpp"
+#include "utils/logging.hpp"
 
 #include <reshade.hpp>
 

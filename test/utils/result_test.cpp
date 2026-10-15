@@ -1,6 +1,6 @@
-#include "error.hpp"
-#include "result.hpp"
-#include "runtime_error.hpp"
+#include "utils/error.hpp"
+#include "utils/result.hpp"
+#include "utils/runtime_error.hpp"
 
 #include <gtest/gtest.h>
 

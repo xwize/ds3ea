@@ -87,17 +87,17 @@
 * Conan for packages 
 * Errors: a failure is described by one ds3ea::Error (an ErrorCategory, a message and the source location where it
   was raised), reported one of two ways:
-	- Result<T> (result.hpp) for functions deep in the call stack and called often (per frame, per draw, per
+	- Result<T> (utils/result.hpp) for functions deep in the call stack and called often (per frame, per draw, per
 	  resource), or whose error handling is very simple (the caller checks it and falls back). Return
 	  make_error(category, "format", args...). Never call .value() on a Result: check and dereference it, chain it
 	  (and_then, map, or_else) or use get_or_throw()
 	- Exceptions for every other failure: I/O, constructors that can't fully initialise, setup, anything that has to
-	  travel up several levels. Throw a RuntimeError (runtime_error.hpp):
+	  travel up several levels. Throw a RuntimeError (utils/runtime_error.hpp):
 	  throw RuntimeError({ ErrorCategory::io, fmt::format("cannot write {}", path) });
 	- assert (<cassert>) for programmer errors (null where non-null is required, an index out of range, a call in
 	  the wrong state), never Result or an exception: a broken precondition is a bug, not a runtime error
 * Exceptions never escape into ReShade, D3D11, the game or Windows: every boundary (each ReShade event callback,
-  DllMain, add-on init) runs its work through call_and_catch() (boundary.hpp), which logs and never rethrows.
+  DllMain, add-on init) runs its work through call_and_catch() (utils/boundary.hpp), which logs and never rethrows.
   Where it makes sense the boundary also disables the affected feature
 * A catch that handles only some categories switches on get_error().category, handles those and rethrows the rest
   with throw;. Never swallow unhandled categories in a default:

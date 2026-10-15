@@ -1,7 +1,7 @@
 #pragma once
 
-#include "error.hpp"
-#include "runtime_error.hpp"
+#include "utils/error.hpp"
+#include "utils/runtime_error.hpp"
 
 #include <tl/expected.hpp>
 
