@@ -34,8 +34,11 @@ function(ds3ea_clang_tidy target)
 			VS_GLOBAL_ClangTidyToolExeAdditionalOptions "--quiet --experimental-custom-checks"
 		)
 	else()
+		# CMake passes --extra-arg-before=--driver-mode=cl, after which clang-tidy ignores the compile command's /EHsc
+		# and reports every try/throw as "exceptions disabled", so /EHsc goes in again as an extra argument
+		# (https://gitlab.kitware.com/cmake/cmake/-/issues/20512)
 		set_target_properties(${target} PROPERTIES
-			CXX_CLANG_TIDY "${DS3EA_CLANG_TIDY_EXE};--quiet;--experimental-custom-checks"
+			CXX_CLANG_TIDY "${DS3EA_CLANG_TIDY_EXE};--quiet;--experimental-custom-checks;--extra-arg=/EHsc"
 		)
 	endif()
 endfunction()
