@@ -78,10 +78,10 @@ void RenderPassTracker::on_bind_pipeline(reshade::api::command_list* cmd_list, r
 		get_passes(cmd_list).pixel_pass = find_shader_render_pass(pipeline);
 }
 
-bool RenderPassTracker::on_draw(reshade::api::command_list* cmd_list)
+bool RenderPassTracker::on_draw(reshade::api::command_list* cmd_list, const DrawCallArgs& draw)
 {
 	CommandListPasses& passes = get_passes(cmd_list);
-	return passes.state_machine.on_draw(passes.pixel_pass, cmd_list, m_attached) == DrawAction::skip;
+	return passes.state_machine.on_draw(passes.pixel_pass, cmd_list, draw, m_attached) == DrawAction::skip;
 }
 
 void RenderPassTracker::on_close_command_list(reshade::api::command_list* cmd_list)

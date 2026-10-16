@@ -23,11 +23,33 @@ public:
 	 */
 	explicit Settings(const IniSettingsStore& store);
 
-	/** The Tonemapper's settings, in ds3ea.ini's [Tonemapper] section. */
+	/**
+	 * The Tonemapper's settings, in ds3ea.ini's [Tonemapper] section. The curve's defaults (tuned in game) look very
+	 * close to the game's own tonemap, without its banding and black crush.
+	 */
 	struct TonemapperValues
 	{
-		// Claim the game's tonemap draw and draw the stand-in instead
+		static constexpr float k_default_exposure = 0.85f;
+		static constexpr float k_default_white = 11.0f;
+		static constexpr float k_default_toe = 0.60f;
+		static constexpr float k_default_shoulder = 0.15f;
+
+		// Replace the game's tonemap with ours
 		bool replace_game_tonemap = true;
+		// Input scale before the curve, on top of the game's own exposure
+		float exposure = k_default_exposure;
+		// Input level that maps to white (Hable's W)
+		float white = k_default_white;
+		// Toe strength (Hable's D): higher lifts and flattens the darks
+		float toe = k_default_toe;
+		// Shoulder strength (Hable's A): higher compresses the highlights sooner
+		float shoulder = k_default_shoulder;
+		// Bloom strength: 0 none, 1 the game's
+		float bloom = 1.0f;
+		// Triangular dither, which hides banding in the 8-bit output
+		bool dither = true;
+		// Apply the game's colour grading LUT, at full precision
+		bool apply_lut = true;
 
 		bool operator==(const TonemapperValues&) const = default;
 	};

@@ -6,6 +6,7 @@
 
 #include <mutex>
 #include <string_view>
+#include <type_traits>
 
 namespace
 {
@@ -22,28 +23,13 @@ template <typename Values, typename ReadOrWrite>
 void for_each_setting(Values& values, const ReadOrWrite& read_or_write)
 {
 	read_or_write("Tonemapper", "ReplaceGameTonemap", values.tonemapper.replace_game_tonemap);
-}
-
-/**
- * @param store The settings file.
- * @param section Section name.
- * @param key Key within the section.
- * @param value Set from the file; kept if the file doesn't have it.
- */
-void load_value(const IniSettingsStore& store, std::string_view section, std::string_view key, bool& value)
-{
-	value = store.get_bool_or(section, key, value);
-}
-
-/**
- * @param store The settings file.
- * @param section Section name.
- * @param key Key within the section.
- * @param value Written to the file.
- */
-void save_value(IniSettingsStore& store, std::string_view section, std::string_view key, bool value)
-{
-	store.set_bool(section, key, value);
+	read_or_write("Tonemapper", "Exposure", values.tonemapper.exposure);
+	read_or_write("Tonemapper", "WhitePoint", values.tonemapper.white);
+	read_or_write("Tonemapper", "Toe", values.tonemapper.toe);
+	read_or_write("Tonemapper", "Shoulder", values.tonemapper.shoulder);
+	read_or_write("Tonemapper", "Bloom", values.tonemapper.bloom);
+	read_or_write("Tonemapper", "Dither", values.tonemapper.dither);
+	read_or_write("Tonemapper", "ApplyLUT", values.tonemapper.apply_lut);
 }
 } // namespace
 
@@ -59,7 +45,12 @@ void Settings::load(const IniSettingsStore& store)
 	const std::lock_guard lock(m_mutex);
 	Values values = m_saved;
 	for_each_setting(values, [&store](std::string_view section, std::string_view key, auto& value)
-		{ load_value(store, section, key, value); });
+	{
+		if constexpr (std::is_same_v<std::remove_cvref_t<decltype(value)>, bool>)
+			value = store.get_bool_or(section, key, value);
+		else
+			value = store.get_float_or(section, key, value);
+	});
 	m_values = values;
 	m_saved = values;
 }
@@ -68,7 +59,12 @@ bool Settings::save(IniSettingsStore& store)
 {
 	const Values values = get();
 	for_each_setting(values, [&store](std::string_view section, std::string_view key, auto value)
-		{ save_value(store, section, key, value); });
+	{
+		if constexpr (std::is_same_v<decltype(value), bool>)
+			store.set_bool(section, key, value);
+		else
+			store.set_float(section, key, value);
+	});
 
 	if (!store.save())
 		return false;

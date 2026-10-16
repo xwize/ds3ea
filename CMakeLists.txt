@@ -56,6 +56,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(cmake/reshade.cmake)
 include(cmake/clang_tidy.cmake)
+include(cmake/shaders.cmake)
 
 find_package(fmt REQUIRED)
 find_package(inipp REQUIRED)
@@ -96,7 +97,8 @@ add_library(ds3ea_core STATIC
 	src/utils/shader_reflection.cpp
 	src/utils/shader_reflection.hpp
 )
-target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src")
+# shaders/ for the constant buffers that HLSL and C++ share (shaders/*_constants.hlsli)
+target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/shaders")
 target_link_libraries(ds3ea_core
 	PUBLIC fmt::fmt tl::expected
 	PRIVATE ds3ea_options d3dcompiler inipp::inipp reshade::headers
@@ -114,10 +116,13 @@ if(NOT DS3EA_SANITIZE)
 		src/dll_main.cpp
 		src/render_pass_tracker.cpp
 		src/render_pass_tracker.hpp
+		src/tonemap_renderer.cpp
+		src/tonemap_renderer.hpp
 		src/tonemapper.cpp
 		src/tonemapper.hpp
 	)
 	target_link_libraries(ds3ea PRIVATE ds3ea_options ds3ea_core reshade::headers fmt::fmt)
+	add_dependencies(ds3ea ds3ea_shaders)
 	ds3ea_clang_tidy(ds3ea)
 	# ReShade loads add-ons by extension, so the DLL is ds3ea.addon64
 	set_target_properties(ds3ea PROPERTIES

@@ -10,8 +10,10 @@ add_executable(ds3ea_tests
 	utils/logging_test.cpp
 	utils/result_test.cpp
 	utils/runtime_error_test.cpp
+	utils/shader_reflection_test.cpp
 )
 target_link_libraries(ds3ea_tests PRIVATE ds3ea_options ds3ea_core reshade::headers GTest::gtest_main)
+add_dependencies(ds3ea_tests ds3ea_shaders)
 ds3ea_clang_tidy(ds3ea_tests)
 if(DS3EA_SANITIZE)
 	ds3ea_copy_asan_runtime(ds3ea_tests)
