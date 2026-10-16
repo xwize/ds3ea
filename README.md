@@ -120,7 +120,9 @@ settings use their defaults.
 
 A Debug build also checks for leaks: it writes `ds3ea_leaks.log` in the game folder, which lists every block the
 add-on still had allocated when it unloaded. An empty file means no leaks, but only after a normal exit (Alt+F4, as
-the launcher does). If the game is killed, the report is never written.
+the launcher does) that unloads the add-on. If the game is killed, the report is never written. DS3 1.15.0 also
+corrupts its own heap at exit, even without ReShade, and that sometimes ends the process (`0xc0000374`) before the
+add-on unloads. `ReShade.log` then has no `Unregistered add-on "DS3EA"` line, and the empty report means nothing.
 
 ## Foundation at a glance
 
