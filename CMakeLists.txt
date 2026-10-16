@@ -82,8 +82,6 @@ add_library(ds3ea_core STATIC
 	src/render_pass_state_machine.hpp
 	src/settings.cpp
 	src/settings.hpp
-	src/tonemap_model.cpp
-	src/tonemap_model.hpp
 	src/utils/boundary.hpp
 	src/utils/build_config.hpp
 	src/utils/error.cpp

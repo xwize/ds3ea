@@ -1,6 +1,6 @@
 #include "addon.hpp"
 #include "settings.hpp"
-#include "tonemap_model.hpp"
+#include "tonemapper.hpp"
 
 #include <imgui.h>
 

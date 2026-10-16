@@ -35,7 +35,7 @@ void for_each_setting(Values& values, const ReadOrWrite& read_or_write)
  * @param store The settings file.
  * @param section Section name.
  * @param key Key within the section.
- * @param value Set from the file; kept if the file doesn't have it.
+ * @param[in,out] value Set from the file; kept if the file doesn't have it.
  */
 void load_value(const IniSettingsStore& store, std::string_view section, std::string_view key, bool& value)
 {
@@ -46,7 +46,7 @@ void load_value(const IniSettingsStore& store, std::string_view section, std::st
  * @param store The settings file.
  * @param section Section name.
  * @param key Key within the section.
- * @param value Set from the file; kept if the file doesn't have it.
+ * @param[in,out] value Set from the file; kept if the file doesn't have it.
  */
 void load_value(const IniSettingsStore& store, std::string_view section, std::string_view key, float& value)
 {

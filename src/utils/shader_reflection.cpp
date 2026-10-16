@@ -6,9 +6,10 @@
 #include <wrl/client.h>
 
 #include <algorithm>
+#include <bitset>
+#include <cctype>
 #include <cstddef>
-#include <cstdint>
-#include <cstring>
+#include <string_view>
 
 namespace
 {
@@ -17,9 +18,9 @@ using namespace ds3ea;
 /**
  * @param reflection D3D's view of the compiled shader.
  * @param bound_resources How many constant buffers, textures and samplers the shader binds.
- * @param info Gets the constant buffer and texture names.
+ * @param[in,out] info Gets the constant buffer and texture names added.
  */
-void read_bindings(ID3D11ShaderReflection& reflection, UINT bound_resources, ShaderReflectionInfo& info)
+void fill_bindings_into_info(ID3D11ShaderReflection& reflection, UINT bound_resources, ShaderReflectionInfo& info)
 {
 	for (UINT index = 0; index < bound_resources; ++index)
 	{
@@ -38,9 +39,9 @@ void read_bindings(ID3D11ShaderReflection& reflection, UINT bound_resources, Sha
 
 /**
  * @param reflection D3D's view of the compiled shader.
- * @param info Gets the $Globals variables the shader uses.
+ * @param[in,out] info Gets the $Globals variables the shader uses added.
  */
-void read_used_globals(ID3D11ShaderReflection& reflection, ShaderReflectionInfo& info)
+void fill_used_globals_into_info(ID3D11ShaderReflection& reflection, ShaderReflectionInfo& info)
 {
 	ID3D11ShaderReflectionConstantBuffer* const buffer = reflection.GetConstantBufferByName("$Globals");
 	D3D11_SHADER_BUFFER_DESC desc = {};
@@ -58,24 +59,33 @@ void read_used_globals(ID3D11ShaderReflection& reflection, ShaderReflectionInfo&
 }
 
 /**
+ * @param name A semantic name from the compiled code, in the case it was written in.
+ * @returns True if it's TEXCOORD; semantics are case-insensitive in HLSL.
+ */
+[[nodiscard]] bool is_texcoord(std::string_view name)
+{
+	constexpr std::string_view k_texcoord = "TEXCOORD";
+	return std::ranges::equal(name, k_texcoord,
+		[](char letter, char upper) { return std::toupper(static_cast<unsigned char>(letter)) == upper; });
+}
+
+/**
  * @param reflection D3D's view of the compiled shader.
  * @param input_count How many inputs its signature declares.
  * @returns Bit n set for each TEXCOORDn input the shader reads.
  */
-[[nodiscard]] std::uint32_t read_texcoords_read(ID3D11ShaderReflection& reflection, UINT input_count)
+[[nodiscard]] std::bitset<k_max_texcoords> determine_texcoords_used(ID3D11ShaderReflection& reflection,
+	UINT input_count)
 {
-	// One bit per TEXCOORD index in the result
-	constexpr UINT k_max_texcoords = 32;
-	std::uint32_t texcoords = 0;
+	std::bitset<k_max_texcoords> texcoords;
 
 	for (UINT index = 0; index < input_count; ++index)
 	{
 		D3D11_SIGNATURE_PARAMETER_DESC input = {};
 		const bool read = SUCCEEDED(reflection.GetInputParameterDesc(index, &input)) && input.ReadWriteMask != 0;
 
-		// Semantics are case-insensitive in HLSL, and the compiled code keeps the case they were written in
-		if (read && _stricmp(input.SemanticName, "TEXCOORD") == 0 && input.SemanticIndex < k_max_texcoords)
-			texcoords |= 1u << input.SemanticIndex;
+		if (read && is_texcoord(input.SemanticName) && input.SemanticIndex < k_max_texcoords)
+			texcoords.set(input.SemanticIndex);
 	}
 
 	return texcoords;
@@ -97,10 +107,10 @@ Result<ShaderReflectionInfo> reflect_pixel_shader(const void* code, std::size_t 
 		return make_error(ErrorCategory::invalid_data, "no shader description in {} bytes of shader code", size);
 
 	ShaderReflectionInfo info;
-	read_bindings(*reflection.Get(), desc.BoundResources, info);
+	fill_bindings_into_info(*reflection.Get(), desc.BoundResources, info);
 
 	if (std::ranges::find(info.cbuffers, "$Globals") != info.cbuffers.end())
-		read_used_globals(*reflection.Get(), info);
+		fill_used_globals_into_info(*reflection.Get(), info);
 
 	for (UINT index = 0; index < desc.OutputParameters; ++index)
 	{
@@ -110,7 +120,7 @@ Result<ShaderReflectionInfo> reflect_pixel_shader(const void* code, std::size_t 
 			++info.output_count;
 	}
 
-	info.texcoords_read = read_texcoords_read(*reflection.Get(), desc.InputParameters);
+	info.texcoords_used = determine_texcoords_used(*reflection.Get(), desc.InputParameters);
 	return info;
 }
 } // namespace ds3ea

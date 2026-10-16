@@ -2,6 +2,7 @@
 
 #include "utils/result.hpp"
 
+#include <bitset>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -9,6 +10,9 @@
 
 namespace ds3ea
 {
+// TEXCOORD indices a pixel shader can have: one per input register, of which D3D11 has 32
+inline constexpr std::size_t k_max_texcoords = 32;
+
 /** What a compiled pixel shader declares, as reflect_pixel_shader reads it back. */
 struct ShaderReflectionInfo
 {
@@ -21,7 +25,7 @@ struct ShaderReflectionInfo
 	// Render target outputs (SV_Target)
 	std::uint32_t output_count = 0;
 	// Bit n is set if the shader reads its TEXCOORDn input
-	std::uint32_t texcoords_read = 0;
+	std::bitset<k_max_texcoords> texcoords_used = {};
 };
 
 /**

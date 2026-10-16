@@ -81,8 +81,8 @@ float hash(uint2 pixel)
 /**
  * The game's tint texture remapped, as the game does, into an additive bloom tint and a scene multiplier.
  * @param tint The tint texture's colour.
- * @param bloom_tint Gets the bloom tint.
- * @param scene_tint Gets the scene multiplier.
+ * @param[out] bloom_tint The bloom tint.
+ * @param[out] scene_tint The scene multiplier.
  */
 void remap_tint(float3 tint, out float3 bloom_tint, out float3 scene_tint)
 {
@@ -129,7 +129,7 @@ float4 main(float4 uv_scene : TEXCOORD0, float4 uv_glare : TEXCOORD1, float4 vig
 	// The bloom screen-blended, then the variant's colour matrix and the game's gamma
 	color = color + (1.0 - color) * (bloom * settings.bloom_strength);
 	if (settings.has_color_matrix != 0)
-		color = transform(game.m44_ColorTransformMatrix, float4(color, 1.0)).rgb;
+		color = mul(game.m44_ColorTransformMatrix, float4(color, 1.0)).rgb;
 
 	float4 result = float4(pow(saturate(color), game.fParam_GammaCorrection.x), alpha);
 

@@ -67,7 +67,7 @@ public:
 	 * @param draw Its arguments.
 	 * @returns True if a listener replaced the draw and the game's must be skipped.
 	 */
-	[[nodiscard]] bool on_draw(reshade::api::command_list* cmd_list, const DrawCall& draw);
+	[[nodiscard]] bool on_draw(reshade::api::command_list* cmd_list, const DrawCallArgs& draw);
 
 	/** @param cmd_list A deferred command list the game finished recording (FinishCommandList); its pass ends. */
 	void on_close_command_list(reshade::api::command_list* cmd_list);

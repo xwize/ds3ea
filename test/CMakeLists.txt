@@ -5,7 +5,6 @@ add_executable(ds3ea_tests
 	render_pass_state_machine_test.cpp
 	render_pass_test.cpp
 	settings_test.cpp
-	tonemap_model_test.cpp
 	utils/error_test.cpp
 	utils/ini_settings_store_test.cpp
 	utils/logging_test.cpp

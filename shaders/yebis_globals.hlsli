@@ -20,17 +20,6 @@ struct YebisGlobals
 	float4 fParam_TonemapMaxMappingLuminance;
 	// 209
 	float4 fParam_BrightPassRemapFactor;
-	// 210-213: applied with transform()
-	float4 m44_ColorTransformMatrix[4];
+	// 210-213: one row per register, applied as mul(m44_ColorTransformMatrix, colour)
+	row_major float4x4 m44_ColorTransformMatrix;
 };
-
-/**
- * A game matrix applied to a vector. The game stores matrices one register per output component.
- * @param m The matrix.
- * @param v The vector.
- * @returns result.i = dot(v, m[i]).
- */
-float4 transform(float4 m[4], float4 v)
-{
-	return float4(dot(v, m[0]), dot(v, m[1]), dot(v, m[2]), dot(v, m[3]));
-}

@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bitset>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -42,7 +43,7 @@ TEST(ShaderReflection, ReadsOurTonemapShader)
 	EXPECT_TRUE(contains(info->resources, "t_lut"));
 	EXPECT_EQ(info->output_count, 1u);
 	// TEXCOORD0-3 are read; TEXCOORD4 is declared only to line up with the game's vertex shader
-	EXPECT_EQ(info->texcoords_read, 0b01111u);
+	EXPECT_EQ(info->texcoords_used, std::bitset<ds3ea::k_max_texcoords>(0b01111));
 }
 
 TEST(ShaderReflection, OurTonemapShaderIsNotTakenForTheGames)

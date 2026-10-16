@@ -31,7 +31,7 @@ void begin_pass(RenderPass pass, reshade::api::command_list* cmd_list, std::span
  * @returns The listener's answer.
  */
 [[nodiscard]] DrawAction ask(IRenderPassListener& listener, RenderPass pass, reshade::api::command_list* cmd_list,
-	const DrawCall& draw, bool claimed)
+	const DrawCallArgs& draw, bool claimed)
 {
 	if (pass == RenderPass::tonemap)
 		return listener.on_tonemap_draw(cmd_list, draw, claimed);
@@ -46,7 +46,7 @@ void begin_pass(RenderPass pass, reshade::api::command_list* cmd_list, std::span
  * @param listeners Who to ask, in priority order.
  * @returns skip if a listener replaced the draw.
  */
-[[nodiscard]] DrawAction draw_pass(RenderPass pass, reshade::api::command_list* cmd_list, const DrawCall& draw,
+[[nodiscard]] DrawAction draw_pass(RenderPass pass, reshade::api::command_list* cmd_list, const DrawCallArgs& draw,
 	std::span<IRenderPassListener* const> listeners)
 {
 	DrawAction action = DrawAction::keep;
@@ -84,8 +84,8 @@ void end_pass(RenderPass pass, reshade::api::command_list* cmd_list, std::span<I
 
 namespace ds3ea
 {
-DrawAction RenderPassStateMachine::on_draw(RenderPass pass, reshade::api::command_list* cmd_list, const DrawCall& draw,
-	std::span<IRenderPassListener* const> listeners)
+DrawAction RenderPassStateMachine::on_draw(RenderPass pass, reshade::api::command_list* cmd_list,
+	const DrawCallArgs& draw, std::span<IRenderPassListener* const> listeners)
 {
 	if (pass == RenderPass::unknown)
 		return DrawAction::keep;

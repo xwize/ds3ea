@@ -69,8 +69,8 @@ constexpr UINT k_game_lut_slot = 16;
  * changed.
  * @param device The game's device.
  * @param game_lut The game's LUT.
- * @param copy Our copy; created or replaced as needed.
- * @param view Its shader resource view.
+ * @param[in,out] copy Our copy; created or replaced as needed.
+ * @param[in,out] view Its shader resource view, replaced with it.
  * @returns Nothing, or a device Error.
  */
 [[nodiscard]] Result<void> match_lut_copy(ID3D11Device& device, ID3D11Texture3D& game_lut,
@@ -112,7 +112,7 @@ constexpr UINT k_game_lut_slot = 16;
  * Makes copy a constant buffer the game's $Globals can be copied into, recreating it if their size changed.
  * @param device The game's device.
  * @param game_buffer The game's constant buffer.
- * @param copy Our copy; created or replaced as needed.
+ * @param[in,out] copy Our copy; created or replaced as needed.
  * @returns Nothing, or a device Error.
  */
 [[nodiscard]] Result<void> match_buffer_copy(ID3D11Device& device, ID3D11Buffer& game_buffer,
@@ -149,7 +149,7 @@ constexpr UINT k_game_lut_slot = 16;
  * @param context The context recording it.
  * @param draw The game's draw.
  */
-void repeat_draw(ID3D11DeviceContext& context, const DrawCall& draw)
+void repeat_draw(ID3D11DeviceContext& context, const DrawCallArgs& draw)
 {
 	assert(draw.kind != DrawKind::indirect && "Bug: repeating an indirect draw, whose arguments aren't known");
 
@@ -280,7 +280,7 @@ bool TonemapRenderer::has_grading() const
 	return m_lut_view != nullptr && m_grading_globals != nullptr;
 }
 
-Result<void> TonemapRenderer::draw_tonemap(ID3D11DeviceContext& context, const DrawCall& draw,
+Result<void> TonemapRenderer::draw_tonemap(ID3D11DeviceContext& context, const DrawCallArgs& draw,
 	const shader::TonemapConstants& constants)
 {
 	assert((constants.is_graded == 0 || has_grading()) && "Bug: grading the tonemap before any grading was captured");
@@ -304,7 +304,7 @@ Result<void> TonemapRenderer::draw_tonemap(ID3D11DeviceContext& context, const D
 	return {};
 }
 
-void TonemapRenderer::draw_grading_passthrough(ID3D11DeviceContext& context, const DrawCall& draw)
+void TonemapRenderer::draw_grading_passthrough(ID3D11DeviceContext& context, const DrawCallArgs& draw)
 {
 	const SavedPixelShaderState saved(context);
 	context.PSSetShader(m_passthrough_shader.Get(), nullptr, 0);

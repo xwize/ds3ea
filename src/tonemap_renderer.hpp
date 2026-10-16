@@ -45,7 +45,7 @@ public:
 	 * @param constants Our shader's constants; is_graded only if has_grading().
 	 * @returns Nothing, or a device Error if the constants can't be written (nothing is drawn).
 	 */
-	[[nodiscard]] Result<void> draw_tonemap(ID3D11DeviceContext& context, const DrawCall& draw,
+	[[nodiscard]] Result<void> draw_tonemap(ID3D11DeviceContext& context, const DrawCallArgs& draw,
 		const shader::TonemapConstants& constants);
 
 	/**
@@ -53,7 +53,7 @@ public:
 	 * @param context The context recording the game's grading draw, with its input bound.
 	 * @param draw The game's draw, repeated with our shader; not indirect.
 	 */
-	void draw_grading_passthrough(ID3D11DeviceContext& context, const DrawCall& draw);
+	void draw_grading_passthrough(ID3D11DeviceContext& context, const DrawCallArgs& draw);
 
 private:
 	Microsoft::WRL::ComPtr<ID3D11Device> m_device;

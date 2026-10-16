@@ -29,7 +29,7 @@ public:
 		calls.emplace_back("tonemap_begin");
 	}
 
-	ds3ea::DrawAction on_tonemap_draw(reshade::api::command_list* /*cmd_list*/, const ds3ea::DrawCall& /*draw*/,
+	ds3ea::DrawAction on_tonemap_draw(reshade::api::command_list* /*cmd_list*/, const ds3ea::DrawCallArgs& /*draw*/,
 		bool claimed) override
 	{
 		calls.emplace_back(claimed ? "tonemap_draw_claimed" : "tonemap_draw");

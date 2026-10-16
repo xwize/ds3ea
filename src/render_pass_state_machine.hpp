@@ -27,7 +27,7 @@ public:
 	 * @param listeners Who to tell, in priority order.
 	 * @returns Whether the game's draw runs.
 	 */
-	[[nodiscard]] DrawAction on_draw(RenderPass pass, reshade::api::command_list* cmd_list, const DrawCall& draw,
+	[[nodiscard]] DrawAction on_draw(RenderPass pass, reshade::api::command_list* cmd_list, const DrawCallArgs& draw,
 		std::span<IRenderPassListener* const> listeners);
 
 	/**

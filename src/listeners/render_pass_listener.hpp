@@ -22,7 +22,7 @@ enum class DrawKind
 };
 
 /** A game draw's arguments, so a listener that replaces the draw can repeat it with its own shaders bound. */
-struct DrawCall
+struct DrawCallArgs
 {
 	DrawKind kind = DrawKind::draw;
 	// Vertices, or indices for an indexed draw
@@ -79,7 +79,7 @@ public:
 	 * @returns skip to replace the game's draw, keep to let it run.
 	 */
 	[[nodiscard]] virtual DrawAction on_tonemap_draw(reshade::api::command_list* /*cmd_list*/,
-		const DrawCall& /*draw*/, bool /*claimed*/)
+		const DrawCallArgs& /*draw*/, bool /*claimed*/)
 	{
 		return DrawAction::keep;
 	}
@@ -98,7 +98,7 @@ public:
 	 * @returns skip to replace the game's draw, keep to let it run.
 	 */
 	[[nodiscard]] virtual DrawAction on_color_grading_draw(reshade::api::command_list* /*cmd_list*/,
-		const DrawCall& /*draw*/, bool /*claimed*/)
+		const DrawCallArgs& /*draw*/, bool /*claimed*/)
 	{
 		return DrawAction::keep;
 	}

@@ -4,7 +4,6 @@
 #include "listeners/pipeline_listener.hpp"
 #include "listeners/render_pass_listener.hpp"
 #include "settings.hpp"
-#include "tonemap_model.hpp"
 #include "tonemap_renderer.hpp"
 #include "utils/reshade_forward.hpp"
 
@@ -20,6 +19,31 @@
 
 namespace ds3ea
 {
+/**
+ * What a game tonemap shader applies besides its curve. The game has a variant with the radial vignette and the colour
+ * matrix, and one with neither; our shader stands in for both, told which by its constants.
+ */
+struct TonemapVariant
+{
+	// Reads the centred vignette coordinate (TEXCOORD2) and darkens towards the edges
+	bool has_vignette = false;
+	// Applies m44_ColorTransformMatrix
+	bool has_color_matrix = false;
+};
+
+/** The range a tonemap setting is kept in: the overlay's slider, and a clamp on values read from the ini. */
+struct SettingRange
+{
+	float min;
+	float max;
+};
+
+inline constexpr SettingRange k_exposure_range = { .min = 0.25f, .max = 4.0f };
+inline constexpr SettingRange k_white_range = { .min = 2.0f, .max = 30.0f };
+inline constexpr SettingRange k_toe_range = { .min = 0.05f, .max = 1.0f };
+inline constexpr SettingRange k_shoulder_range = { .min = 0.05f, .max = 0.5f };
+inline constexpr SettingRange k_bloom_range = { .min = 0.0f, .max = 1.0f };
+
 /**
  * The tonemapping feature: with the replace_game_tonemap setting, our tonemap (Hable's filmic curve, the game's
  * colour grading at full precision, a triangular dither) replaces the game's, drawn in place by TonemapRenderer.
@@ -46,10 +70,10 @@ public:
 		std::uint64_t pipeline) override;
 	void on_pipeline_destroyed(std::uint64_t pipeline) override;
 	void on_tonemap_begin(reshade::api::command_list* cmd_list) override;
-	[[nodiscard]] DrawAction on_tonemap_draw(reshade::api::command_list* cmd_list, const DrawCall& draw,
+	[[nodiscard]] DrawAction on_tonemap_draw(reshade::api::command_list* cmd_list, const DrawCallArgs& draw,
 		bool claimed) override;
 	void on_tonemap_end(reshade::api::command_list* cmd_list) override;
-	[[nodiscard]] DrawAction on_color_grading_draw(reshade::api::command_list* cmd_list, const DrawCall& draw,
+	[[nodiscard]] DrawAction on_color_grading_draw(reshade::api::command_list* cmd_list, const DrawCallArgs& draw,
 		bool claimed) override;
 
 private:

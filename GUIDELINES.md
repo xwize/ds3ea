@@ -44,7 +44,8 @@
 * Each module or hpp that introduces a new namespace or interface should have a doxygen block explaining it
 * Each struct or class has a summary doxygen explaining it 
 * Every function declared in an hpp (the public API) has a doxygen block with an @param for each parameter and
-  @returns for a non-void return (spelled @param and @returns, not @return or \param). Struct fields and enum values
+  @returns for a non-void return (spelled @param and @returns, not @return or \param). A parameter the function
+  writes to is @param[out], or @param[in,out] if it also reads it. Struct fields and enum values
   take // comments, not doxygen blocks. A header with functions outside any namespace needs a /** @file */ block.
 * Follow the reshade style where possible (but treat this file as an override)
 * Naming: PascalCase for types (classes, structs, enums, aliases); snake_case for namespaces, variables, functions,

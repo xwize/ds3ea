@@ -159,7 +159,7 @@ void Addon::on_bind_pipeline(reshade::api::command_list* cmd_list, reshade::api:
 bool Addon::on_draw(reshade::api::command_list* cmd_list, std::uint32_t vertex_count, std::uint32_t instance_count,
 	std::uint32_t first_vertex, std::uint32_t first_instance)
 {
-	const DrawCall draw = {
+	const DrawCallArgs draw = {
 		.kind = DrawKind::draw,
 		.count = vertex_count,
 		.instance_count = instance_count,
@@ -175,7 +175,7 @@ bool Addon::on_draw(reshade::api::command_list* cmd_list, std::uint32_t vertex_c
 bool Addon::on_draw_indexed(reshade::api::command_list* cmd_list, std::uint32_t index_count,
 	std::uint32_t instance_count, std::uint32_t first_index, std::int32_t vertex_offset, std::uint32_t first_instance)
 {
-	const DrawCall draw = {
+	const DrawCallArgs draw = {
 		.kind = DrawKind::draw_indexed,
 		.count = index_count,
 		.instance_count = instance_count,
@@ -195,7 +195,7 @@ bool Addon::on_draw_or_dispatch_indirect(reshade::api::command_list* cmd_list, r
 	if (type == reshade::api::indirect_command::dispatch)
 		return false;
 
-	const DrawCall draw = { .kind = DrawKind::indirect };
+	const DrawCallArgs draw = { .kind = DrawKind::indirect };
 	bool skip = false;
 	call_and_catch("draw_indirect", [cmd_list, &draw, &skip] { skip = g_instance->m_tracker.on_draw(cmd_list, draw); });
 	return skip;

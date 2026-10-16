@@ -1,7 +1,7 @@
 #include "tonemapper.hpp"
 #include "render_pass.hpp"
 #include "settings.hpp"
-#include "tonemap_model.hpp"
+#include "tonemap_constants.hlsli"
 #include "tonemap_renderer.hpp"
 #include "utils/error.hpp"
 #include "utils/logging.hpp"
@@ -13,6 +13,7 @@
 #include <reshade.hpp>
 #include <wrl/client.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <mutex>
 #include <optional>
@@ -22,6 +23,72 @@
 namespace
 {
 using namespace ds3ea;
+
+/**
+ * The curve's input scale at exposure 1: puts the game's mid-grey (0.5 after its exposure) at about the same output
+ * level as the game's curve (0.49 before gamma).
+ */
+constexpr float k_exposure_bias = 4.0f;
+
+// The game's vignette coordinate, centred on the screen
+constexpr std::size_t k_vignette_texcoord = 2;
+
+/**
+ * @param game_shader What a game tonemap pixel shader declares.
+ * @returns Its variant: the vignette if it reads TEXCOORD2, the colour matrix if it uses m44_ColorTransformMatrix.
+ */
+[[nodiscard]] TonemapVariant get_tonemap_variant(const ShaderReflectionInfo& game_shader)
+{
+	const auto& globals = game_shader.globals;
+	return {
+		.has_vignette = game_shader.texcoords_used.test(k_vignette_texcoord),
+		.has_color_matrix = std::ranges::find(globals, "m44_ColorTransformMatrix") != globals.end(),
+	};
+}
+
+/**
+ * @param value A setting.
+ * @param range Its range.
+ * @returns The value, clamped to the range.
+ */
+[[nodiscard]] float clamp_to(float value, SettingRange range)
+{
+	return std::clamp(value, range.min, range.max);
+}
+
+/**
+ * @param flag A setting or variant flag.
+ * @returns The flag as the shader's uint: 1 on, 0 off.
+ */
+[[nodiscard]] shader::uint to_shader_flag(bool flag)
+{
+	return flag ? 1u : 0u;
+}
+
+/**
+ * @param settings The tonemap settings, clamped to their ranges.
+ * @param variant The variant of the game's tonemap being replaced.
+ * @param is_graded True if the game's grading inputs (fade, LUT) are bound for the shader to apply.
+ * @returns The constants for shaders/tonemap.hlsl.
+ */
+[[nodiscard]] shader::TonemapConstants pack_tonemap_constants(const Settings::TonemapperValues& settings,
+	TonemapVariant variant, bool is_graded)
+{
+	return {
+		.exposure = clamp_to(settings.exposure, k_exposure_range) * k_exposure_bias,
+		.white = clamp_to(settings.white, k_white_range),
+		.toe = clamp_to(settings.toe, k_toe_range),
+		.shoulder = clamp_to(settings.shoulder, k_shoulder_range),
+		.bloom_strength = clamp_to(settings.bloom, k_bloom_range),
+		.has_vignette = to_shader_flag(variant.has_vignette),
+		.has_color_matrix = to_shader_flag(variant.has_color_matrix),
+		.is_graded = to_shader_flag(is_graded),
+		.apply_lut = to_shader_flag(settings.apply_lut),
+		.dither = to_shader_flag(settings.dither),
+		.padding_0 = 0,
+		.padding_1 = 0,
+	};
+}
 
 /**
  * @param cmd_list A command list ReShade gave us.
@@ -104,7 +171,7 @@ void Tonemapper::on_tonemap_begin(reshade::api::command_list* cmd_list)
 		static_cast<const void*>(cmd_list));
 }
 
-DrawAction Tonemapper::on_tonemap_draw(reshade::api::command_list* cmd_list, const DrawCall& draw, bool claimed)
+DrawAction Tonemapper::on_tonemap_draw(reshade::api::command_list* cmd_list, const DrawCallArgs& draw, bool claimed)
 {
 	const Settings::TonemapperValues settings = m_settings->get().tonemapper;
 	const bool should_replace = settings.replace_game_tonemap && !claimed && draw.kind != DrawKind::indirect;
@@ -154,7 +221,8 @@ void Tonemapper::on_tonemap_end(reshade::api::command_list* cmd_list)
 		static_cast<const void*>(cmd_list));
 }
 
-DrawAction Tonemapper::on_color_grading_draw(reshade::api::command_list* cmd_list, const DrawCall& draw, bool claimed)
+DrawAction Tonemapper::on_color_grading_draw(reshade::api::command_list* cmd_list, const DrawCallArgs& draw,
+	bool claimed)
 {
 	const bool is_graded = m_is_graded_this_frame.exchange(false);
 
