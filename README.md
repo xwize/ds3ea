@@ -29,21 +29,24 @@ to build on. Coding rules live in [GUIDELINES.md](GUIDELINES.md).
 - Python 3, for `scripts/`
 
 You don't need to run `conan install` yourself. CMake runs it during configure through
-[cmake-conan](https://github.com/conan-io/cmake-conan) (`cmake/conan_provider.cmake`). It builds the packages in `conanfile.txt` with the
-static CRT and C++20 to match the project.
+[cmake-conan](https://github.com/conan-io/cmake-conan) (`cmake/conan_provider.cmake`). It builds the packages in
+`conanfile.txt` with the static CRT and C++20 to match the project.
 
 ### ReShade headers
 
-The add-on API is header-only. `cmake/reshade.cmake` finds the headers in one of two ways:
+The add-on API is header-only, and its overlay API needs the Dear ImGui header ReShade was built with.
+`cmake/reshade.cmake` finds both in one of two ways:
 
-- **Default:** downloads the pinned ReShade commit (hash-checked, about 3 MB, once per build tree). A fresh clone or
-  worktree configures with no setup.
-- **Local checkout:** set `DS3EA_RESHADE_DIR` to the **absolute** path of a ReShade source tree, e.g.
+- **Default:** downloads the pinned ReShade commit and its pinned ImGui commit (hash-checked, about 5 MB, once per
+  build tree). A fresh clone or worktree configures with no setup.
+- **Local checkout:** set `DS3EA_RESHADE_DIR` to the **absolute** path of a ReShade source tree with its submodules
+  checked out (ImGui is `deps/imgui`), e.g.
   `S:\Internal\res_DS3EA_\ds3ea\repos\reshade`. A relative path resolves against wherever CMake runs from, which
   varies between IDEs. You can set it as an environment variable (the presets forward it) or pass
   `-DDS3EA_RESHADE_DIR=...`.
 
-To bump ReShade, update `DS3EA_RESHADE_COMMIT` and `DS3EA_RESHADE_SHA256` together.
+To bump ReShade, update `DS3EA_RESHADE_COMMIT` and `DS3EA_RESHADE_SHA256` together, and `DS3EA_IMGUI_COMMIT` and
+`DS3EA_IMGUI_SHA256` to its `deps/imgui` submodule.
 
 ## Building
 
@@ -122,4 +125,6 @@ add-on unloads. `ReShade.log` then has no `Unregistered add-on "DS3EA"` line, an
    `DS3EA loaded, settings from ds3ea.ini`.
 
 Settings live in `ds3ea.ini` in the game's working directory (the `Game` folder). The file is optional: missing
-settings use their defaults.
+settings use their defaults. They can also be changed in game, under **DS3EA** in the overlay's *Add-ons* tab, and
+changes are saved to `ds3ea.ini` within half a second. A Debug build also reloads `ds3ea.ini` when another program
+edits it while the game runs.

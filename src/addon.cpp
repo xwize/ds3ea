@@ -2,14 +2,16 @@
 #include "addon_info.hpp"
 #include "listeners/device_listener.hpp"
 #include "listeners/pipeline_listener.hpp"
+#include "settings.hpp"
 #include "utils/boundary.hpp"
+#include "utils/build_config.hpp"
 #include "utils/ini_settings_store.hpp"
 #include "utils/logging.hpp"
+#include "utils/reshade_with_imgui.hpp"
 
 #include <fmt/std.h>
 
-#include <reshade.hpp>
-
+#include <chrono>
 #include <cstdint>
 #include <memory>
 
@@ -19,6 +21,13 @@ using namespace ds3ea;
 
 // Relative, so it resolves against the game's working directory
 constexpr const wchar_t* k_ini_file_name = L"ds3ea.ini";
+
+// How often changed settings are saved (and, in Debug builds, an edited ds3ea.ini is reloaded)
+constexpr std::chrono::milliseconds k_settings_interval(500);
+
+// How long to wait after a failed save before trying again, so a file that can't be written isn't reported twice a
+// second
+constexpr std::chrono::seconds k_settings_retry_interval(10);
 
 // The instance the static ReShade handlers forward to. Set once the features are attached, before the handlers are
 // registered, and cleared after the add-on is unregistered, so no handler sees it change.
@@ -34,8 +43,9 @@ struct Addon::Key
 
 Addon::Addon(HMODULE hmod, Key /*key*/)
 	: m_module(hmod)
-	, m_settings(k_ini_file_name)
-	, m_tonemapper(m_settings.get_bool_or("Tonemapper", "ReplaceGameTonemap", true))
+	, m_settings_file(k_ini_file_name)
+	, m_settings(m_settings_file)
+	, m_tonemapper(m_settings)
 {
 	// Every listener is attached before any event can arrive, so the lists never change while handlers read them. The
 	// tracker is the first pipeline listener, so it has a new shader's render pass before any other one runs.
@@ -55,14 +65,20 @@ Addon::Addon(HMODULE hmod, Key /*key*/)
 	reshade::register_event<reshade::addon_event::draw_or_dispatch_indirect>(&Addon::on_draw_or_dispatch_indirect);
 	reshade::register_event<reshade::addon_event::close_command_list>(&Addon::on_close_command_list);
 	reshade::register_event<reshade::addon_event::present>(&Addon::on_present);
-	log::info("{} loaded, settings from {}", k_addon_name, m_settings.get_path());
+	reshade::register_overlay(nullptr, &Addon::on_draw_settings);
+	log::info("{} loaded, settings from {}", k_addon_name, m_settings_file.get_path());
 }
 
 Addon::~Addon()
 {
-	log::set_sink(nullptr);
+	// First, so no handler touches the settings file while it's saved
 	reshade::unregister_addon(m_module);
 	g_instance = nullptr;
+
+	if (m_settings.has_unsaved_changes())
+		static_cast<void>(m_settings.save(m_settings_file));
+
+	log::set_sink(nullptr);
 }
 
 std::unique_ptr<Addon> Addon::create(HMODULE hmod)
@@ -175,6 +191,33 @@ void Addon::on_present(reshade::api::command_queue* queue, reshade::api::swapcha
 	const reshade::api::rect* /*source_rect*/, const reshade::api::rect* /*dest_rect*/,
 	std::uint32_t /*dirty_rect_count*/, const reshade::api::rect* /*dirty_rects*/)
 {
-	call_and_catch("present", [queue] { g_instance->m_tracker.on_present(queue); });
+	call_and_catch("present", [queue]
+	{
+		g_instance->m_tracker.on_present(queue);
+		g_instance->update_settings_file();
+	});
+}
+
+void Addon::on_draw_settings(reshade::api::effect_runtime* /*runtime*/)
+{
+	call_and_catch("settings overlay", [] { g_instance->draw_settings(); });
+}
+
+void Addon::update_settings_file()
+{
+	const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+
+	if (now < m_next_settings_update)
+		return;
+
+	m_next_settings_update = now + k_settings_interval;
+
+	// Before saving, so an edited file wins over unsaved changes
+	if constexpr (k_debug_build)
+		m_settings.reload_if_changed_on_disk(m_settings_file);
+
+	// The store logs a failed save
+	if (m_settings.has_unsaved_changes() && !m_settings.save(m_settings_file))
+		m_next_settings_update = now + k_settings_retry_interval;
 }
 } // namespace ds3ea

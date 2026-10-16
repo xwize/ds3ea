@@ -30,6 +30,17 @@ T extract_or(const std::string* text, T fallback)
 
 	return value;
 }
+
+/**
+ * @param path A file.
+ * @returns Its last-write time, or file_time_type::min() if it doesn't exist.
+ */
+[[nodiscard]] std::filesystem::file_time_type get_last_write_time(const std::filesystem::path& path)
+{
+	std::error_code error;
+	const std::filesystem::file_time_type time = std::filesystem::last_write_time(path, error);
+	return error ? std::filesystem::file_time_type::min() : time;
+}
 } // namespace
 
 namespace ds3ea
@@ -41,6 +52,15 @@ public:
 	explicit Impl(std::filesystem::path path)
 		: m_path(std::move(path))
 	{
+		load();
+	}
+
+	/**
+	 * Parses the file into a fresh Ini, replacing the current one only if the file could be opened.
+	 * @returns True if the file was read.
+	 */
+	bool load()
+	{
 		std::ifstream file(m_path);
 
 		if (!file)
@@ -48,16 +68,21 @@ public:
 			std::error_code error;
 
 			if (std::filesystem::exists(m_path, error))
-				log::error("Can't open {}; using default settings", m_path);
+				log::error("Can't open {}; settings not loaded from it", m_path);
 			else
 				log::info("{} doesn't exist yet; using default settings", m_path);
 
-			return;
+			return false;
 		}
 
-		m_ini.parse(file);
-		for (const std::string& line : m_ini.errors)
+		Ini ini;
+		ini.parse(file);
+		for (const std::string& line : ini.errors)
 			log::warning("Ignoring line in {}: {}", m_path, line);
+
+		m_ini = std::move(ini);
+		m_file_time = get_last_write_time(m_path);
+		return true;
 	}
 
 	/**
@@ -87,7 +112,7 @@ public:
 	}
 
 	/** @returns True if the file was written and moved over the old one. */
-	[[nodiscard]] bool save() const
+	[[nodiscard]] bool save()
 	{
 		std::filesystem::path temp_path = m_path;
 		temp_path += L".tmp";
@@ -100,8 +125,12 @@ public:
 
 		std::error_code error;
 		std::filesystem::rename(temp_path, m_path, error);
+
 		if (!error)
+		{
+			m_file_time = get_last_write_time(m_path);
 			return true;
+		}
 
 		log::error("Can't replace {} with {}: {}; settings not saved", m_path, temp_path, error.message());
 		std::filesystem::remove(temp_path, error);
@@ -109,6 +138,14 @@ public:
 			log::warning("Can't remove {}: {}", temp_path, error.message());
 
 		return false;
+	}
+
+	/** @returns True if the file was written by someone else since it was last loaded or saved. */
+	[[nodiscard]] bool is_changed_on_disk() const
+	{
+		std::error_code error;
+		const std::filesystem::file_time_type time = std::filesystem::last_write_time(m_path, error);
+		return !error && time != m_file_time;
 	}
 
 	/** @returns The file this store loads from and saves to. */
@@ -145,6 +182,8 @@ private:
 
 	std::filesystem::path m_path;
 	Ini m_ini;
+	// The file's last-write time after our last load or save
+	std::filesystem::file_time_type m_file_time = std::filesystem::file_time_type::min();
 };
 
 IniSettingsStore::IniSettingsStore(std::filesystem::path path)
@@ -206,9 +245,19 @@ void IniSettingsStore::set_string(std::string_view section, std::string_view key
 	m_impl->set(section, key, std::string(value));
 }
 
-bool IniSettingsStore::save() const
+bool IniSettingsStore::save()
 {
 	return m_impl->save();
+}
+
+bool IniSettingsStore::reload()
+{
+	return m_impl->load();
+}
+
+bool IniSettingsStore::is_changed_on_disk() const
+{
+	return m_impl->is_changed_on_disk();
 }
 
 const std::filesystem::path& IniSettingsStore::get_path() const

@@ -1,8 +1,7 @@
 #include "utils/logging.hpp"
+#include "utils/reshade_with_imgui.hpp"
 
 #include <gtest/gtest.h>
-
-#include <reshade.hpp>
 
 #include <array>
 #include <cstddef>

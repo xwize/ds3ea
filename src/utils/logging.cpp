@@ -1,6 +1,5 @@
 #include "utils/logging.hpp"
-
-#include <reshade.hpp>
+#include "utils/reshade_with_imgui.hpp"
 
 #include <atomic>
 #include <string>

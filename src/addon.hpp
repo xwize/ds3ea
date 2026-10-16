@@ -3,14 +3,16 @@
 #include "listeners/device_listener.hpp"
 #include "listeners/pipeline_listener.hpp"
 #include "render_pass_tracker.hpp"
+#include "settings.hpp"
 #include "tonemapper.hpp"
 #include "utils/ini_settings_store.hpp"
-
-#include <Windows.h>
 // Not utils/reshade_forward.hpp: the handlers take ReShade's handle types (pipeline, resource) by value, which are
 // typedefs of unnamed structs and can't be forward-declared
-#include <reshade.hpp>
+#include "utils/reshade_with_imgui.hpp"
 
+#include <Windows.h>
+
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -21,6 +23,9 @@ namespace ds3ea
  * The add-on's registration with ReShade and the owner of its services and features. create() registers the add-on;
  * the constructor builds and attaches the features, then registers the ReShade event handlers, which forward to the
  * one instance. DllMain owns that instance for the life of the module.
+ *
+ * Its methods are split across addon.cpp and the extension files addon_<functionality>.cpp (addon_ui.cpp: the
+ * overlay).
  */
 class Addon
 {
@@ -30,13 +35,16 @@ class Addon
 public:
 	/**
 	 * Loads ds3ea.ini from the game's working directory, builds and attaches the features, then registers the event
-	 * handlers and logs the start-up. Only create() can call it, once ReShade has accepted the add-on.
+	 * handlers and the overlay and logs the start-up. Only create() can call it, once ReShade has accepted the add-on.
 	 * @param hmod Handle of this add-on's DLL.
 	 * @param key Passkey only create() can make.
 	 */
 	Addon(HMODULE hmod, Key key);
 
-	/** Unregisters the add-on, which removes every event handler it registered. */
+	/**
+	 * Unregisters the add-on, which removes every event handler and overlay it registered, then saves the settings if
+	 * they changed.
+	 */
 	~Addon();
 
 	/** Not copyable or movable: the instance owns the ReShade registration and the handlers point at it. */
@@ -157,8 +165,26 @@ private:
 		const reshade::api::rect* source_rect, const reshade::api::rect* dest_rect, std::uint32_t dirty_rect_count,
 		const reshade::api::rect* dirty_rects);
 
+	/**
+	 * ReShade draws the add-on's settings in its Add-ons tab; draws them with draw_settings().
+	 * @param runtime Unused.
+	 */
+	static void on_draw_settings(reshade::api::effect_runtime* runtime);
+
+	/**
+	 * At most every k_settings_interval: in Debug builds reloads ds3ea.ini if it was edited, then saves the settings
+	 * if they changed. Called from present, which runs every frame whether or not the overlay is open.
+	 */
+	void update_settings_file();
+
+	/** Draws a section per feature with widgets bound to the settings (addon_ui.cpp). */
+	void draw_settings();
+
 	HMODULE m_module;
-	IniSettingsStore m_settings;
+	IniSettingsStore m_settings_file;
+	Settings m_settings;
+	// When update_settings_file() next does its work; present only
+	std::chrono::steady_clock::time_point m_next_settings_update;
 	// The features, declared before the tracker and the lists that point at them so they're destroyed after
 	Tonemapper m_tonemapper;
 	RenderPassTracker m_tracker;

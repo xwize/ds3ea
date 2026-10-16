@@ -79,6 +79,8 @@ add_library(ds3ea_core STATIC
 	src/render_pass.hpp
 	src/render_pass_state_machine.cpp
 	src/render_pass_state_machine.hpp
+	src/settings.cpp
+	src/settings.hpp
 	src/utils/boundary.hpp
 	src/utils/build_config.hpp
 	src/utils/error.cpp
@@ -88,6 +90,7 @@ add_library(ds3ea_core STATIC
 	src/utils/logging.cpp
 	src/utils/logging.hpp
 	src/utils/reshade_forward.hpp
+	src/utils/reshade_with_imgui.hpp
 	src/utils/result.hpp
 	src/utils/runtime_error.cpp
 	src/utils/runtime_error.hpp
@@ -108,6 +111,7 @@ if(NOT DS3EA_SANITIZE)
 		src/addon.cpp
 		src/addon.hpp
 		src/addon_info.hpp
+		src/addon_ui.cpp
 		src/dll_main.cpp
 		src/render_pass_tracker.cpp
 		src/render_pass_tracker.hpp

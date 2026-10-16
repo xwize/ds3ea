@@ -95,11 +95,15 @@
 * Prefer fmt for formatting 
 * class is prefered for classes with methods
 * struct is preferred for plain old data 
-* One class per header file (but many pod structs are OK)
+* Usually one class per .hpp/.cpp pair (many POD structs in a header are fine). A class may have extension .cpp
+  files named <class>_<functionality>.cpp (e.g. addon_ui.cpp) that implement some of its methods; every method is
+  still declared in the class's one header
 * Features are listeners. Listener interfaces live in src/listeners/, one per header, split by concern (render
   passes, device, pipelines); every hook has a no-op default body (a hook returning a DrawAction returns keep), and
   implementations mark each one override. Render pass hooks are per command list: begin and end are notifications,
   and a draw is claimed from that pass's on_<pass>_draw hook
+* ReShade is included through utils/reshade_with_imgui.hpp, never <reshade.hpp> directly: ReShade's overlay only
+  gets its ImGui functions when imgui.h comes first in every file
 * Addon is the composition root and the only place ReShade events are registered. It owns the features by value
   and attaches every listener in its constructor, before registering any event; attach order is the claim priority
 * Conan for packages 
