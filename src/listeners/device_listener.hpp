@@ -1,6 +1,6 @@
 #pragma once
 
-#include "reshade_forward.hpp"
+#include "utils/reshade_forward.hpp"
 
 namespace ds3ea
 {

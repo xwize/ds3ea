@@ -7,6 +7,8 @@
 #include "utils/ini_settings_store.hpp"
 
 #include <Windows.h>
+// Not utils/reshade_forward.hpp: the handlers take ReShade's handle types (pipeline, resource) by value, which are
+// typedefs of unnamed structs and can't be forward-declared
 #include <reshade.hpp>
 
 #include <cstdint>

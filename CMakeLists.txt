@@ -79,9 +79,6 @@ add_library(ds3ea_core STATIC
 	src/render_pass.hpp
 	src/render_pass_state_machine.cpp
 	src/render_pass_state_machine.hpp
-	src/reshade_forward.hpp
-	src/shader_reflection.cpp
-	src/shader_reflection.hpp
 	src/utils/boundary.hpp
 	src/utils/build_config.hpp
 	src/utils/error.cpp
@@ -90,9 +87,12 @@ add_library(ds3ea_core STATIC
 	src/utils/ini_settings_store.hpp
 	src/utils/logging.cpp
 	src/utils/logging.hpp
+	src/utils/reshade_forward.hpp
 	src/utils/result.hpp
 	src/utils/runtime_error.cpp
 	src/utils/runtime_error.hpp
+	src/utils/shader_reflection.cpp
+	src/utils/shader_reflection.hpp
 )
 target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(ds3ea_core

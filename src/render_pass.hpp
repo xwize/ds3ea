@@ -1,6 +1,6 @@
 #pragma once
 
-#include "shader_reflection.hpp"
+#include "utils/shader_reflection.hpp"
 
 namespace ds3ea
 {
