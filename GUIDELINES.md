@@ -54,6 +54,8 @@
   locals, statics, parameters, public struct fields and const variables or const references to runtime values
   e.g. constexpr int k_max_passes = 8;   but   const Settings& settings = get_settings();
   (clang-tidy checks the prefixes, except k_ on const values that aren't constexpr)
+* Classes that only declare overridable hooks (listener interfaces, no data members) are prefixed I, e.g.
+  IRenderPassListener; everything else is plain PascalCase
 * Braceless if bodies are permitted provided they are followed by an empty newline 
 *  e.g. if (x)
 *	        return;
@@ -94,6 +96,12 @@
 * class is prefered for classes with methods
 * struct is preferred for plain old data 
 * One class per header file (but many pod structs are OK)
+* Features are listeners. Listener interfaces live in src/listeners/, one per header, split by concern (render
+  passes, device, pipelines); every hook has a no-op default body (a hook returning a DrawAction returns keep), and
+  implementations mark each one override. Render pass hooks are per command list: begin and end are notifications,
+  and a draw is claimed from that pass's on_<pass>_draw hook
+* Addon is the composition root and the only place ReShade events are registered. It owns the features by value
+  and attaches every listener in its constructor, before registering any event; attach order is the claim priority
 * Conan for packages 
 * Errors: a failure is described by one ds3ea::Error (an ErrorCategory, a message and the source location where it
   was raised), reported one of two ways:

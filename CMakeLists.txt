@@ -69,8 +69,16 @@ if(DS3EA_SANITIZE)
 	target_link_libraries(ds3ea_options INTERFACE ds3ea_sanitizers)
 endif()
 
-# Code shared by the add-on and its tests. inipp is linked PRIVATE so only ini_settings_store.cpp sees it.
+# Code shared by the add-on and its tests. inipp is linked PRIVATE so only ini_settings_store.cpp sees it;
+# d3dcompiler provides D3DReflect for shader_reflection.cpp.
 add_library(ds3ea_core STATIC
+	src/listeners/device_listener.hpp
+	src/listeners/pipeline_listener.hpp
+	src/listeners/render_pass_listener.hpp
+	src/render_pass.cpp
+	src/render_pass.hpp
+	src/render_pass_state_machine.cpp
+	src/render_pass_state_machine.hpp
 	src/utils/boundary.hpp
 	src/utils/build_config.hpp
 	src/utils/error.cpp
@@ -79,14 +87,17 @@ add_library(ds3ea_core STATIC
 	src/utils/ini_settings_store.hpp
 	src/utils/logging.cpp
 	src/utils/logging.hpp
+	src/utils/reshade_forward.hpp
 	src/utils/result.hpp
 	src/utils/runtime_error.cpp
 	src/utils/runtime_error.hpp
+	src/utils/shader_reflection.cpp
+	src/utils/shader_reflection.hpp
 )
 target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(ds3ea_core
 	PUBLIC fmt::fmt tl::expected
-	PRIVATE ds3ea_options inipp::inipp reshade::headers
+	PRIVATE ds3ea_options d3dcompiler inipp::inipp reshade::headers
 )
 ds3ea_clang_tidy(ds3ea_core)
 
@@ -98,6 +109,10 @@ if(NOT DS3EA_SANITIZE)
 		src/addon.hpp
 		src/addon_info.hpp
 		src/dll_main.cpp
+		src/render_pass_tracker.cpp
+		src/render_pass_tracker.hpp
+		src/tonemapper.cpp
+		src/tonemapper.hpp
 	)
 	target_link_libraries(ds3ea PRIVATE ds3ea_options ds3ea_core reshade::headers fmt::fmt)
 	ds3ea_clang_tidy(ds3ea)
