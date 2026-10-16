@@ -1,5 +1,7 @@
 #include "addon.hpp"
 #include "addon_info.hpp"
+#include "listeners/device_listener.hpp"
+#include "listeners/pipeline_listener.hpp"
 #include "utils/boundary.hpp"
 #include "utils/ini_settings_store.hpp"
 #include "utils/logging.hpp"
@@ -13,8 +15,14 @@
 
 namespace
 {
+using namespace ds3ea;
+
 // Relative, so it resolves against the game's working directory
 constexpr const wchar_t* k_ini_file_name = L"ds3ea.ini";
+
+// The instance the static ReShade handlers forward to. Set once the features are attached, before the handlers are
+// registered, and cleared after the add-on is unregistered, so no handler sees it change.
+Addon* g_instance = nullptr;
 } // namespace
 
 namespace ds3ea
@@ -27,16 +35,34 @@ struct Addon::Key
 Addon::Addon(HMODULE hmod, Key /*key*/)
 	: m_module(hmod)
 	, m_settings(k_ini_file_name)
+	, m_tonemapper(m_settings.get_bool_or("Tonemapper", "ReplaceGameTonemap", true))
 {
+	// Every listener is attached before any event can arrive, so the lists never change while handlers read them. The
+	// tracker is the first pipeline listener, so it has a new shader's render pass before any other one runs.
+	m_pipeline_listeners.push_back(&m_tracker);
+	m_tracker.attach(&m_tonemapper);
+	m_device_listeners.push_back(&m_tonemapper);
+
+	g_instance = this;
 	reshade::register_event<reshade::addon_event::init_device>(&Addon::on_init_device);
+	reshade::register_event<reshade::addon_event::destroy_device>(&Addon::on_destroy_device);
+	reshade::register_event<reshade::addon_event::init_pipeline>(&Addon::on_init_pipeline);
+	reshade::register_event<reshade::addon_event::destroy_pipeline>(&Addon::on_destroy_pipeline);
+	reshade::register_event<reshade::addon_event::destroy_command_list>(&Addon::on_destroy_command_list);
+	reshade::register_event<reshade::addon_event::bind_pipeline>(&Addon::on_bind_pipeline);
+	reshade::register_event<reshade::addon_event::draw>(&Addon::on_draw);
+	reshade::register_event<reshade::addon_event::draw_indexed>(&Addon::on_draw_indexed);
+	reshade::register_event<reshade::addon_event::draw_or_dispatch_indirect>(&Addon::on_draw_or_dispatch_indirect);
+	reshade::register_event<reshade::addon_event::close_command_list>(&Addon::on_close_command_list);
+	reshade::register_event<reshade::addon_event::present>(&Addon::on_present);
 	log::info("{} loaded, settings from {}", k_addon_name, m_settings.get_path());
 }
 
 Addon::~Addon()
 {
-	reshade::unregister_event<reshade::addon_event::init_device>(&Addon::on_init_device);
 	log::set_sink(nullptr);
 	reshade::unregister_addon(m_module);
+	g_instance = nullptr;
 }
 
 std::unique_ptr<Addon> Addon::create(HMODULE hmod)
@@ -65,6 +91,90 @@ void Addon::on_init_device(reshade::api::device* device)
 	{
 		const auto api = static_cast<std::uint32_t>(device->get_api());
 		log::trace("on_init_device called (device api {:#x})", api);
+		for (IDeviceListener* const listener : g_instance->m_device_listeners)
+			listener->on_device_created(device);
 	});
+}
+
+void Addon::on_destroy_device(reshade::api::device* device)
+{
+	call_and_catch("destroy_device", [device]
+	{
+		for (IDeviceListener* const listener : g_instance->m_device_listeners)
+			listener->on_device_destroyed(device);
+	});
+}
+
+void Addon::on_init_pipeline(reshade::api::device* /*device*/, reshade::api::pipeline_layout /*layout*/,
+	std::uint32_t subobject_count, const reshade::api::pipeline_subobject* subobjects,
+	reshade::api::pipeline pipeline)
+{
+	call_and_catch("init_pipeline", [subobject_count, subobjects, pipeline]
+	{
+		for (IPipelineListener* const listener : g_instance->m_pipeline_listeners)
+			listener->on_pipeline_created(subobject_count, subobjects, pipeline.handle);
+	});
+}
+
+void Addon::on_destroy_pipeline(reshade::api::device* /*device*/, reshade::api::pipeline pipeline)
+{
+	call_and_catch("destroy_pipeline", [pipeline]
+	{
+		for (IPipelineListener* const listener : g_instance->m_pipeline_listeners)
+			listener->on_pipeline_destroyed(pipeline.handle);
+	});
+}
+
+void Addon::on_destroy_command_list(reshade::api::command_list* cmd_list)
+{
+	call_and_catch("destroy_command_list", [cmd_list] { g_instance->m_tracker.on_destroy_command_list(cmd_list); });
+}
+
+void Addon::on_bind_pipeline(reshade::api::command_list* cmd_list, reshade::api::pipeline_stage stages,
+	reshade::api::pipeline pipeline)
+{
+	call_and_catch("bind_pipeline", [cmd_list, stages, pipeline]
+		{ g_instance->m_tracker.on_bind_pipeline(cmd_list, stages, pipeline.handle); });
+}
+
+bool Addon::on_draw(reshade::api::command_list* cmd_list, std::uint32_t /*vertex_count*/,
+	std::uint32_t /*instance_count*/, std::uint32_t /*first_vertex*/, std::uint32_t /*first_instance*/)
+{
+	bool skip = false;
+	call_and_catch("draw", [cmd_list, &skip] { skip = g_instance->m_tracker.on_draw(cmd_list); });
+	return skip;
+}
+
+bool Addon::on_draw_indexed(reshade::api::command_list* cmd_list, std::uint32_t /*index_count*/,
+	std::uint32_t /*instance_count*/, std::uint32_t /*first_index*/, std::int32_t /*vertex_offset*/,
+	std::uint32_t /*first_instance*/)
+{
+	bool skip = false;
+	call_and_catch("draw_indexed", [cmd_list, &skip] { skip = g_instance->m_tracker.on_draw(cmd_list); });
+	return skip;
+}
+
+bool Addon::on_draw_or_dispatch_indirect(reshade::api::command_list* cmd_list, reshade::api::indirect_command type,
+	reshade::api::resource /*buffer*/, std::uint64_t /*offset*/, std::uint32_t /*draw_count*/,
+	std::uint32_t /*stride*/)
+{
+	if (type == reshade::api::indirect_command::dispatch)
+		return false;
+
+	bool skip = false;
+	call_and_catch("draw_indirect", [cmd_list, &skip] { skip = g_instance->m_tracker.on_draw(cmd_list); });
+	return skip;
+}
+
+void Addon::on_close_command_list(reshade::api::command_list* cmd_list)
+{
+	call_and_catch("close_command_list", [cmd_list] { g_instance->m_tracker.on_close_command_list(cmd_list); });
+}
+
+void Addon::on_present(reshade::api::command_queue* queue, reshade::api::swapchain* /*swapchain*/,
+	const reshade::api::rect* /*source_rect*/, const reshade::api::rect* /*dest_rect*/,
+	std::uint32_t /*dirty_rect_count*/, const reshade::api::rect* /*dirty_rects*/)
+{
+	call_and_catch("present", [queue] { g_instance->m_tracker.on_present(queue); });
 }
 } // namespace ds3ea
