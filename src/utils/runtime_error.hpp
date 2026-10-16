@@ -7,9 +7,8 @@
 namespace ds3ea
 {
 /**
- * Our one exception type: it carries an Error, and what() returns the Error's message. Throw it with
- * throw RuntimeError({ ErrorCategory::io, fmt::format("cannot write {}", path) }); catch it by const reference and
- * switch on get_error().category to handle some categories and rethrow (throw;) the rest.
+ * Our one exception type: it carries an Error, and what() returns the Error's message. Catch it by const reference
+ * and switch on the Error's category to handle some categories and rethrow the rest.
  */
 class RuntimeError : public std::runtime_error
 {

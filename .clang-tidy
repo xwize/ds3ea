@@ -16,11 +16,14 @@ Checks: >
   cppcoreguidelines-*,
   -cppcoreguidelines-avoid-non-const-global-variables,
   -cppcoreguidelines-owning-memory,
+  google-explicit-constructor,
   google-readability-casting,
   misc-include-cleaner,
   misc-redundant-expression,
   misc-unused-using-decls,
   modernize-avoid-c-arrays,
+  modernize-use-designated-initializers,
+  modernize-use-nodiscard,
   modernize-use-nullptr,
   modernize-use-override,
   performance-*,
@@ -112,4 +115,7 @@ WarningsAsErrors: >
   google-readability-casting,
   cppcoreguidelines-avoid-c-arrays,
   modernize-avoid-c-arrays,
-  cppcoreguidelines-init-variables
+  cppcoreguidelines-init-variables,
+  google-explicit-constructor,
+  modernize-use-designated-initializers,
+  modernize-use-nodiscard

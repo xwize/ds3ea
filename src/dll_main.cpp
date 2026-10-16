@@ -5,9 +5,10 @@
 #include "utils/error.hpp"
 #include "utils/runtime_error.hpp"
 
+#include <fmt/format.h>
+
 #include <Windows.h>
 #include <crtdbg.h>
-#include <fmt/format.h>
 
 #include <memory>
 #include <system_error>
@@ -43,13 +44,16 @@ std::unique_ptr<Addon> g_addon;
 {
 	// A Win32 handle rather than a stream or our logger: the report is written during CRT shutdown, when those may be
 	// gone. It is never closed, since the CRT writes to it after everything of ours has been destroyed.
-	HANDLE const report = CreateFileW(L"ds3ea_leaks.log", GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS,
+	const HANDLE report = CreateFileW(L"ds3ea_leaks.log", GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS,
 		FILE_ATTRIBUTE_NORMAL, nullptr);
 
 	if (report == INVALID_HANDLE_VALUE)
 	{
 		const std::error_code error(static_cast<int>(GetLastError()), std::system_category());
-		throw RuntimeError({ ErrorCategory::io, fmt::format("cannot create ds3ea_leaks.log: {}", error.message()) });
+		throw RuntimeError({
+			.category = ErrorCategory::io,
+			.message = fmt::format("cannot create ds3ea_leaks.log: {}", error.message()),
+		});
 	}
 
 	// The leak list is reported as _CRT_WARN; _CRT_ERROR and _CRT_ASSERT keep their usual reporting

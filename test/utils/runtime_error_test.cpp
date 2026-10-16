@@ -15,7 +15,10 @@ TEST(RuntimeError, CarriesCategoryAndMessage)
 	bool caught = false;
 	try
 	{
-		throw ds3ea::RuntimeError({ ds3ea::ErrorCategory::unsupported, fmt::format("version {} unsupported", "1.08") });
+		throw ds3ea::RuntimeError({
+			.category = ds3ea::ErrorCategory::unsupported,
+			.message = fmt::format("version {} unsupported", "1.08"),
+		});
 	}
 	catch (const ds3ea::RuntimeError& exception)
 	{
@@ -34,7 +37,7 @@ TEST(RuntimeError, RecordsWhereItWasThrown)
 	bool caught = false;
 	try
 	{
-		throw ds3ea::RuntimeError({ ds3ea::ErrorCategory::internal, "broken" });
+		throw ds3ea::RuntimeError({ .category = ds3ea::ErrorCategory::internal, .message = "broken" });
 	}
 	catch (const ds3ea::RuntimeError& exception)
 	{

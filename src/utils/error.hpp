@@ -38,8 +38,7 @@ enum class ErrorCategory
 
 /**
  * Why an operation failed, and where. A default member initializer's std::source_location::current() records where
- * the Error is initialised, so throw RuntimeError({ ErrorCategory::io, fmt::format("cannot write {}", path) });
- * records the throw.
+ * the Error is initialised, so an Error built where a RuntimeError is thrown records the throw.
  */
 struct Error
 {
@@ -65,15 +64,17 @@ struct FormatWithLocation
 	 */
 	template <typename String>
 		requires std::convertible_to<const String&, std::string_view>
-	// NOLINTNEXTLINE Intentional implicit conversion
+	// NOLINTNEXTLINE(google-explicit-constructor): implicit, so make_error's callers pass a plain string literal
 	consteval FormatWithLocation(const String& text, std::source_location location = std::source_location::current())
 		: format(text)
 		, location(location)
 	{
 	}
 
-	fmt::format_string<Args...> format; // The checked format string
-	std::source_location location;      // Where the error was raised
+	// The checked format string
+	fmt::format_string<Args...> format;
+	// Where the error was raised
+	std::source_location location;
 };
 
 /**
@@ -84,11 +85,14 @@ struct FormatWithLocation
  * @returns The Error, ready to return as a failed Result.
  */
 template <typename... Args>
-tl::unexpected<Error> make_error(ErrorCategory category, FormatWithLocation<std::type_identity_t<Args>...> format,
-	Args&&... args)
+[[nodiscard]] tl::unexpected<Error> make_error(ErrorCategory category,
+	FormatWithLocation<std::type_identity_t<Args>...> format, Args&&... args)
 {
-	return tl::unexpected<Error>(
-		Error{ category, fmt::format(format.format, std::forward<Args>(args)...), format.location });
+	return tl::unexpected<Error>(Error{
+		.category = category,
+		.message = fmt::format(format.format, std::forward<Args>(args)...),
+		.location = format.location,
+	});
 }
 } // namespace ds3ea
 

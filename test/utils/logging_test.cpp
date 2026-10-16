@@ -19,8 +19,10 @@ namespace
 /** One line, as the test sink received it. */
 struct LoggedLine
 {
-	reshade::log::level level; // ReShade's level for the line
-	std::string text;          // The line as ReShade would get it
+	// ReShade's level for the line
+	reshade::log::level level;
+	// The line as ReShade would get it
+	std::string text;
 };
 
 // Filled by capture_line, which threads may call at once; guarded by g_logged_mutex
@@ -30,7 +32,7 @@ std::mutex g_logged_mutex;
 void capture_line(reshade::log::level level, std::string_view line)
 {
 	const std::lock_guard lock(g_logged_mutex);
-	g_logged.push_back({ level, std::string(line) });
+	g_logged.push_back({ .level = level, .text = std::string(line) });
 }
 
 /** Captures every line logged while a test runs. */
@@ -80,10 +82,10 @@ TEST_F(LoggingTest, OtherLevelsMapOneToOneWithoutPrefix)
 
 TEST_F(LoggingTest, MessageFormatsWithFmt)
 {
-	ds3ea::log::message(ds3ea::log::Level::info, "{} hello world (device api {:#x})", "DS3EA", 0xb000u);
+	ds3ea::log::message(ds3ea::log::Level::info, "{} loaded (api {:#x})", "DS3EA", 0xb000u);
 
 	ASSERT_EQ(g_logged.size(), 1u);
-	EXPECT_EQ(g_logged.at(0).text, "DS3EA hello world (device api 0xb000)");
+	EXPECT_EQ(g_logged.at(0).text, "DS3EA loaded (api 0xb000)");
 }
 
 TEST_F(LoggingTest, NoSinkDropsMessages)
@@ -119,7 +121,8 @@ TEST_F(LoggingTest, OnceLogsOnceAcrossThreads)
 	{
 		threads.emplace_back([&start, index]
 		{
-			start.arrive_and_wait(); // Release every thread together so they race
+			// Release every thread together so they race
+			start.arrive_and_wait();
 			static const ds3ea::log::Once once(ds3ea::log::Level::info, "thread {}", index);
 		});
 	}

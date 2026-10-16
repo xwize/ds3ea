@@ -10,8 +10,6 @@
 #include <system_error>
 #include <utility>
 
-namespace ds3ea
-{
 namespace
 {
 using Ini = inipp::Ini<char>;
@@ -26,13 +24,16 @@ template <typename T>
 T extract_or(const std::string* text, T fallback)
 {
 	T value = fallback;
+	// inipp leaves value alone when it fails
 	if (text != nullptr)
-		inipp::extract(*text, value); // Leaves value alone when it fails
+		inipp::extract(*text, value);
 
 	return value;
 }
 } // namespace
 
+namespace ds3ea
+{
 /** The parsed file behind IniSettingsStore, kept out of the header so only this file sees inipp. */
 class IniSettingsStore::Impl
 {
@@ -41,9 +42,11 @@ public:
 		: m_path(std::move(path))
 	{
 		std::ifstream file(m_path);
+
 		if (!file)
 		{
 			std::error_code error;
+
 			if (std::filesystem::exists(m_path, error))
 				log::error("Can't open {}; using default settings", m_path);
 			else
@@ -65,6 +68,7 @@ public:
 	[[nodiscard]] const std::string* find(std::string_view section, std::string_view key) const
 	{
 		const auto section_it = m_ini.sections.find(std::string(section));
+
 		if (section_it == m_ini.sections.end())
 			return nullptr;
 
@@ -87,6 +91,7 @@ public:
 	{
 		std::filesystem::path temp_path = m_path;
 		temp_path += L".tmp";
+
 		if (!write(temp_path))
 		{
 			log::error("Can't write {}; settings not saved", temp_path);
@@ -122,6 +127,7 @@ private:
 	[[nodiscard]] bool write(const std::filesystem::path& path) const
 	{
 		std::ofstream file(path, std::ios::trunc);
+
 		for (const auto& [name, section] : m_ini.sections)
 		{
 			if (!name.empty())
@@ -162,6 +168,7 @@ bool IniSettingsStore::get_bool_or(std::string_view section, std::string_view ke
 {
 	// inipp reads only true and false, so 1 and 0 are handled here
 	const std::string* const text = m_impl->find(section, key);
+
 	if (text != nullptr && *text == "1")
 		return true;
 

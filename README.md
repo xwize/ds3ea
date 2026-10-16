@@ -3,19 +3,34 @@
 A [ReShade](https://reshade.me) add-on for Dark Souls 3 that improves the game and gives other modders a foundation
 to build on. Coding rules live in [GUIDELINES.md](GUIDELINES.md).
 
+## Getting started
+
+1. Install the [prerequisites](#prerequisites).
+2. Build and test from any shell:
+
+   ```sh
+   cmake --preset vs
+   cmake --build --preset vs-debug    # or vs-release
+   ctest --preset vs-debug            # or vs-release
+   ```
+
+   The add-on is written to `build/vs/<Config>/ds3ea.addon64`.
+3. Run it in the game: `python scripts/launch_game.py` (see [Testing in the game](#testing-in-the-game)).
+
 ## Prerequisites
 
 - Windows 10/11 x64
 - Visual Studio 2026 (MSVC 14.5x, the "Desktop development with C++" workload). It also provides Ninja.
-- Visual Studio's "C++ Clang tools for Windows" component, for the clang-tidy that runs on every build
-  (`.clang-tidy`). Configure with `-DDS3EA_CLANG_TIDY=OFF` to build without it.
+- Visual Studio's "C++ Clang tools for Windows" component, for the clang-tidy that runs on every MSVC build
+  (`.clang-tidy`) and for the `clang-*` presets. Configure with `-DDS3EA_CLANG_TIDY=OFF` to build without clang-tidy.
 - CMake 3.25 or newer (on PATH)
 - Conan 2 (on PATH: `pip install -U conan`), recent enough to know MSVC 14.5 (`msvc 195`). 2.33 is tested; 2.19
   is too old. Run `conan profile detect` once if you have no default profile.
+- Python 3, for `scripts/`
 
 You don't need to run `conan install` yourself. CMake runs it during configure through
-[cmake-conan](https://github.com/conan-io/cmake-conan) (`cmake/conan_provider.cmake`). It builds `fmt`, `gtest`,
-`inipp` and `scnlib` with the static CRT and C++20 to match the project.
+[cmake-conan](https://github.com/conan-io/cmake-conan) (`cmake/conan_provider.cmake`). It builds the packages in `conanfile.txt` with the
+static CRT and C++20 to match the project.
 
 ### ReShade headers
 
@@ -32,43 +47,43 @@ To bump ReShade, update `DS3EA_RESHADE_COMMIT` and `DS3EA_RESHADE_SHA256` togeth
 
 ## Building
 
-### Command line
+Every preset builds into `build/<configure preset>/`, treats warnings as errors (`/W4 /WX`) and has a build and a test
+preset of the same name (`vs` has `vs-debug` and `vs-release`):
 
-The `vs` preset uses the Visual Studio generator, so any shell works (no developer prompt needed):
+| Configure preset | Compiler, generator | Shell | Builds | clang-tidy |
+|---|---|---|---|---|
+| `vs` | MSVC, Visual Studio (multi-config) | any | add-on and tests | yes |
+| `ninja-debug`, `ninja-release` | MSVC, Ninja | MSVC environment | add-on and tests | yes |
+| `clang-debug`, `clang-release` | clang-cl, Ninja | MSVC environment | add-on and tests | no |
+| `clang-sanitize` | clang-cl with ASan + UBSan, Ninja | MSVC environment | tests only | no |
+
+"MSVC environment" means a *x64 Native Tools Command Prompt for VS*, or an IDE that sets it up (Visual Studio, CLion,
+VS Code). For example:
 
 ```sh
-cmake --preset vs
-cmake --build --preset vs-release    # or vs-debug
-ctest --preset vs-release            # or vs-debug
+cmake --preset clang-sanitize
+cmake --build --preset clang-sanitize
+ctest --preset clang-sanitize
 ```
-
-The add-on is written to `build/vs/<Config>/ds3ea.addon64`.
 
 ### IDE
 
-The `CMakePresets.json` presets work in any IDE that supports CMake presets:
+The presets work in any IDE that supports CMake presets:
 
-- **Visual Studio:** *File > Open > Folder*, then pick `Ninja Debug` / `Ninja Release` (or `Visual Studio 2026`) in the
-  configuration dropdown.
+- **Visual Studio:** *File > Open > Folder* on the repository, then pick a configure preset (`Ninja Debug (x64
+  MSVC)` is the usual one) in the toolbar's configuration dropdown. Visual Studio configures on its own, which runs
+  Conan the first time; *Build > Build All* builds and *Test > Test Explorer* runs the unit tests. Visual Studio must
+  find Conan on PATH, so start it after installing Conan.
 - **CLion:** *Settings > Build, Execution, Deployment > CMake* and enable the presets. Use the Visual Studio toolchain
-  (x64) with the `ninja-*` presets.
-- **VS Code:** install the CMake Tools extension and pick a configure preset. Use the `ninja-*` presets from a
-  developer environment, or use `vs`.
-
-The `ninja-debug` / `ninja-release` presets need the MSVC environment, which the IDEs above set up for you. On the
-command line, run them from a *x64 Native Tools* prompt. Their output goes to `build/ninja-<config>/ds3ea.addon64`.
+  (x64) with the `ninja-*` and `clang-*` presets.
+- **VS Code:** install the CMake Tools extension and pick a configure preset. Use the Ninja presets from a developer
+  environment, or use `vs`.
 
 ### clang-cl and the sanitizers
 
 MSVC builds the add-on for the game. The `clang-*` presets build with **clang-cl** too, from the same "C++ Clang tools"
 component. A second compiler has different warnings and rejects some non-portable code MSVC accepts, so it finds
-problems MSVC lets through. Like the `ninja-*` presets, they need the MSVC environment:
-
-```sh
-cmake --preset clang-debug               # or clang-release, clang-sanitize
-cmake --build --preset clang-debug
-ctest --preset clang-debug
-```
+problems MSVC lets through.
 
 - **`clang-debug` / `clang-release`:** everything, add-on included, with the same warnings-as-errors policy as MSVC.
 - **`clang-sanitize`:** only the unit tests and `ds3ea_core`, built with the sanitizers, so a memory bug or undefined
@@ -77,12 +92,25 @@ ctest --preset clang-debug
     size of a `std::vector` or `std::string`), use after free, double free and use of the stack after return.
   - **UndefinedBehaviorSanitizer** catches signed overflow, out-of-range shifts, null or misaligned access, invalid
     `bool` and enum values, integer division by zero and similar.
-  - **Not caught:** leaks (LeakSanitizer doesn't exist on Windows; a CRT leak check is planned in DSEA-0011), data races and
-    uninitialised reads (TSan and MSan aren't available either), and anything in code the tests don't run.
+  - **Not caught:** leaks (LeakSanitizer doesn't exist on Windows; Debug builds of the add-on have the CRT leak
+    check instead), data races and uninitialised reads (TSan and MSan aren't available either), and anything in code
+    the tests don't run.
 
 With clang-cl, Conan builds its own `compiler=clang` packages (and ASan ones for `clang-sanitize`), which takes about
 half a minute the first time each preset is configured. clang-tidy is off in these presets, since the MSVC builds
 already run it.
+
+### Testing in the game
+
+For development and testing: `python scripts/launch_game.py` installs the newest build, starts the game and loads
+the last save, closes it after 60 seconds and prints the run's `ReShade.log`. `--title-only` stays on the title
+screen. See [scripts/README.md](scripts/README.md).
+
+A Debug build also checks for leaks: it writes `ds3ea_leaks.log` in the game folder, which lists every block the
+add-on still had allocated when it unloaded. An empty file means no leaks, but only after a normal exit (Alt+F4, as
+the launcher does) that unloads the add-on. If the game is killed, the report is never written. DS3 1.15.0 also
+corrupts its own heap at exit, even without ReShade, and that sometimes ends the process (`0xc0000374`) before the
+add-on unloads. `ReShade.log` then has no `Unregistered add-on "DS3EA"` line, and the empty report means nothing.
 
 ## Installing
 
@@ -90,12 +118,8 @@ already run it.
    for `DarkSoulsIII.exe` with the DirectX 10/11/12 API.
 2. Copy `ds3ea.addon64` next to `DarkSoulsIII.exe` (the `Game` folder), or into the folder set as
    *Add-on search path* in ReShade's settings.
-3. Start the game. **DS3EA** shows up in the overlay's *Add-ons* tab, and `ReShade.log` has a line like
-   `DS3EA hello world (device api 0xb000)`.
+3. Start the game. **DS3EA** shows up in the overlay's *Add-ons* tab, and `ReShade.log` has the line
+   `DS3EA loaded, settings from ds3ea.ini`.
 
 Settings live in `ds3ea.ini` in the game's working directory (the `Game` folder). The file is optional: missing
 settings use their defaults.
-
-To test a build in the game without doing these steps by hand, run `python scripts/launch_game.py`. It installs the
-newest build, starts the game and loads the last save, closes it after 60 seconds and prints the run's `ReShade.log`.
-See [scripts/README.md](scripts/README.md).

@@ -26,8 +26,8 @@ class Addon
 
 public:
 	/**
-	 * Loads ds3ea.ini from the game's working directory and registers the event callbacks. Only create() can call it,
-	 * once ReShade has accepted the add-on.
+	 * Loads ds3ea.ini from the game's working directory, registers the event callbacks and logs the start-up. Only
+	 * create() can call it, once ReShade has accepted the add-on.
 	 * @param hmod Handle of this add-on's DLL.
 	 * @param key Passkey only create() can make.
 	 */
@@ -48,11 +48,11 @@ public:
 	 * @returns The registered add-on, or nullptr if ReShade is missing, rejected the add-on API version or already
 	 *          has this module registered.
 	 */
-	static std::unique_ptr<Addon> create(HMODULE hmod);
+	[[nodiscard]] static std::unique_ptr<Addon> create(HMODULE hmod);
 
 private:
 	/**
-	 * Logs the hello-world line once ReShade has created a device.
+	 * Called once ReShade has created a device.
 	 * @param device The device ReShade just initialised.
 	 */
 	static void on_init_device(reshade::api::device* device);

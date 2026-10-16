@@ -2,7 +2,6 @@
 fmt/11.1.4
 gtest/1.15.0
 inipp/1.0.12
-scnlib/4.0.1
 tl-expected/1.2.0
 
 [generators]

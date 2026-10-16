@@ -8,8 +8,8 @@
 	 */
 * Every trailing comment starts with a capital letter, unless it starts with code (an identifier, a keyword such as
   the `} // namespace` that closes every namespace, or an expression like `w = 1/R^2`). Trailing comments on struct
-  members also share one column across the struct. A struct uses either trailing member comments or comments above members, never both:
-  once one member needs a comment above it, every member comment goes above its member.
+  members also share one column across the struct. A struct uses either trailing member comments or comments above
+  members, never both: once one member needs a comment above it, every member comment goes above its member.
 
 * Include files follow the form 
 	#include "gen/supporting.hpp" // supportive code specific to this module (generated shaders for example)
@@ -27,7 +27,9 @@
 	#include <stdlib_header_b>
 	
 * Lines must be 120 columns MAX 
-* Free functions in .cpp files go into anon namespaces which end with } // namespace
+* Free functions, constants and state private to a .cpp go into one anonymous namespace at file scope, which ends with
+  } // namespace and starts with using namespace ds3ea; when it needs our names. The file's public definitions follow
+  in namespace ds3ea { }
 * Namespace contents are not indented: everything inside a namespace (named or anonymous, including forward
   declaration blocks) starts in column 0
 * Class members are ordered: constructors and destructor first, then deleted/defaulted copy and move operations, then
@@ -43,7 +45,7 @@
 * Each struct or class has a summary doxygen explaining it 
 * Every function declared in an hpp (the public API) has a doxygen block with an @param for each parameter and
   @returns for a non-void return (spelled @param and @returns, not @return or \param). Struct fields and enum values
-  keep their trailing // comments. A header with functions outside any namespace needs a /** @file */ block.
+  take // comments, not doxygen blocks. A header with functions outside any namespace needs a /** @file */ block.
 * Follow the reshade style where possible (but treat this file as an override)
 * Naming: PascalCase for types (classes, structs, enums, aliases); snake_case for namespaces, variables, functions,
   methods and enumerators (enum class Level { error, warning };) (clang-tidy)
@@ -58,7 +60,15 @@
 *	    (blank line here)
 * A statement that follows a closing brace } is preceded by an empty newline, except after other closing braces or
   when it continues the same statement (else, __except, catch)
+* A local declaration followed by an if, for or while is separated from it by an empty newline
 * Getters should generally start with get_ and be const where possible e.g. int get_age() const;
+* Functions whose return value is the reason to call them are [[nodiscard]]: getters, factories (create, make_error),
+  conversions and functions returning a Result<T> (clang-tidy checks const member functions)
+* Single-argument constructors, counting ones whose other parameters have defaults, are explicit. A deliberate
+  implicit conversion is the exception: mark it // NOLINTNEXTLINE(google-explicit-constructor) with the reason
+  (clang-tidy)
+* Aggregates are initialised with designated initializers, Error{ .category = ..., .message = ... }, unless they have
+  a single member (clang-tidy)
 * Shaders live in shaders/<name>.hlsl, one per file with a doxygen block saying what it does and who draws it.
   They are compiled at build time (warnings are errors), before the C++, into src/gen/<name>.h holding the bytecode
   as k_<name> (generated, not in git; in the source tree so IDEs resolve it); include it as "gen/<name>.h" and create
@@ -93,7 +103,7 @@
 	  (and_then, map, or_else) or use get_or_throw()
 	- Exceptions for every other failure: I/O, constructors that can't fully initialise, setup, anything that has to
 	  travel up several levels. Throw a RuntimeError (utils/runtime_error.hpp):
-	  throw RuntimeError({ ErrorCategory::io, fmt::format("cannot write {}", path) });
+	  throw RuntimeError({ .category = ErrorCategory::io, .message = fmt::format("cannot write {}", path) });
 	- assert (<cassert>) for programmer errors (null where non-null is required, an index out of range, a call in
 	  the wrong state), never Result or an exception: a broken precondition is a bug, not a runtime error
 * Exceptions never escape into ReShade, D3D11, the game or Windows: every boundary (each ReShade event callback,
@@ -105,6 +115,8 @@
   compiled in every configuration
 * Code builds with no warnings under both MSVC and clang-cl (the clang-debug / clang-release presets), and changes to
   tested code pass the clang-sanitize preset (ASan + UBSan) before review
-* Rules marked (clang-tidy) are checked on every build with the checks in .clang-tidy (test/.clang-tidy relaxes two
-  for tests) and fail it. Configure with -DDS3EA_CLANG_TIDY=OFF for a faster local build without it.
-  // NOLINT(check-name) is only for names or forms an external API forces (Win32, ReShade, DllMain), with the reason
+* Rules marked (clang-tidy) are checked on every MSVC build (the vs and ninja-* presets) with the checks in
+  .clang-tidy (test/.clang-tidy relaxes two for tests) and fail it. The clang-* presets turn it off, since they build
+  the same code. Configure with -DDS3EA_CLANG_TIDY=OFF for a faster local build without it.
+  // NOLINT(check-name) is only for names or forms an external API forces (Win32, ReShade, DllMain) or an exception a
+  rule allows, always with the check's name and the reason
