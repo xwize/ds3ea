@@ -6,13 +6,13 @@
 # and lld-link never links incrementally, so neither needs removing.
 
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	message(FATAL_ERROR "DS3EA_SANITIZE needs clang-cl (MSVC has no UndefinedBehaviorSanitizer); use the clang-sanitize "
-		"preset")
+	message(FATAL_ERROR "DS3EA_SANITIZE needs clang-cl (MSVC has no UndefinedBehaviorSanitizer); use the "
+		"clang-sanitize preset")
 endif()
 
 # CMake links with lld-link directly, which doesn't add the sanitizer runtime the way the clang-cl driver does. With
-# both sanitizers the ASan runtime DLL holds UBSan's too; the thunk connects it to the static CRT. lld-link finds both in
-# the compiler's resource directory.
+# both sanitizers the ASan runtime DLL holds UBSan's too; the thunk connects it to the static CRT. lld-link finds both
+# in the compiler's resource directory.
 set(_sanitizer_link_options
 	clang_rt.asan_dynamic-x86_64.lib
 	/wholearchive:clang_rt.asan_static_runtime_thunk-x86_64.lib

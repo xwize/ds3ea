@@ -6,17 +6,11 @@
 
 #include <memory>
 
-namespace reshade::api
-{
-// NOLINTNEXTLINE(readability-identifier-naming, cppcoreguidelines-virtual-class-destructor): ReShade's type
-struct device;
-} // namespace reshade::api
-
 namespace ds3ea
 {
 /**
  * The add-on's registration with ReShade and the owner of its services. Constructing one through create() registers
- * the add-on and its event callbacks and loads ds3ea.ini; destroying it unregisters them. DllMain owns the single
+ * the add-on and loads ds3ea.ini; destroying it unregisters the add-on. DllMain owns the single
  * instance for the life of the module.
  */
 class Addon
@@ -26,14 +20,14 @@ class Addon
 
 public:
 	/**
-	 * Loads ds3ea.ini from the game's working directory and registers the event callbacks. Only create() can call it,
-	 * once ReShade has accepted the add-on.
+	 * Loads ds3ea.ini from the game's working directory and logs the start-up. Only create() can call it, once
+	 * ReShade has accepted the add-on.
 	 * @param hmod Handle of this add-on's DLL.
 	 * @param key Passkey only create() can make.
 	 */
 	Addon(HMODULE hmod, Key key);
 
-	/** Unregisters the event callbacks and the add-on. */
+	/** Unregisters the add-on. */
 	~Addon();
 
 	/** Not copyable or movable: the instance owns the ReShade registration. */
@@ -43,20 +37,14 @@ public:
 	Addon& operator=(Addon&&) = delete;
 
 	/**
-	 * Registers the add-on and its event callbacks with ReShade.
+	 * Registers the add-on with ReShade.
 	 * @param hmod Handle of this add-on's DLL.
 	 * @returns The registered add-on, or nullptr if ReShade is missing, rejected the add-on API version or already
 	 *          has this module registered.
 	 */
-	static std::unique_ptr<Addon> create(HMODULE hmod);
+	[[nodiscard]] static std::unique_ptr<Addon> create(HMODULE hmod);
 
 private:
-	/**
-	 * Logs the hello-world line once ReShade has created a device.
-	 * @param device The device ReShade just initialised.
-	 */
-	static void on_init_device(reshade::api::device* device);
-
 	HMODULE m_module;
 	IniSettingsStore m_settings;
 };

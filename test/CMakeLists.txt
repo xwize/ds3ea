@@ -2,6 +2,7 @@ find_package(GTest REQUIRED)
 
 add_executable(ds3ea_tests
 	addon_info_test.cpp
+	utils/boundary_test.cpp
 	utils/error_test.cpp
 	utils/ini_settings_store_test.cpp
 	utils/logging_test.cpp

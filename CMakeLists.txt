@@ -59,7 +59,6 @@ include(cmake/clang_tidy.cmake)
 
 find_package(fmt REQUIRED)
 find_package(inipp REQUIRED)
-find_package(scn REQUIRED)
 find_package(tl-expected REQUIRED)
 
 # Compiler settings shared by the add-on and its tests
@@ -70,8 +69,7 @@ if(DS3EA_SANITIZE)
 	target_link_libraries(ds3ea_options INTERFACE ds3ea_sanitizers)
 endif()
 
-# Code shared by the add-on and its tests. inipp is linked PRIVATE so only ini_settings_store.cpp sees it; scnlib is
-# there for parsing text.
+# Code shared by the add-on and its tests. inipp is linked PRIVATE so only ini_settings_store.cpp sees it.
 add_library(ds3ea_core STATIC
 	src/utils/boundary.hpp
 	src/utils/build_config.hpp
@@ -88,7 +86,7 @@ add_library(ds3ea_core STATIC
 target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(ds3ea_core
 	PUBLIC fmt::fmt tl::expected
-	PRIVATE ds3ea_options inipp::inipp reshade::headers scn::scn
+	PRIVATE ds3ea_options inipp::inipp reshade::headers
 )
 ds3ea_clang_tidy(ds3ea_core)
 

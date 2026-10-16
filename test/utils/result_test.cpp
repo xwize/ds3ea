@@ -65,6 +65,14 @@ TEST(Result, ChainsWithAndThenAndMap)
 	EXPECT_EQ(describe(3).error().message, "-7 is not positive");
 }
 
+TEST(Result, OrElseRecoversFromFailureOnly)
+{
+	const auto recover = [](const ds3ea::Error& /*error*/) { return ds3ea::Result<int>(1); };
+
+	EXPECT_EQ(parse_positive(-1).or_else(recover).value_or(0), 1);
+	EXPECT_EQ(parse_positive(5).or_else(recover).value_or(0), 5);
+}
+
 TEST(Result, GetOrThrowReturnsTheValue)
 {
 	EXPECT_EQ(ds3ea::get_or_throw(parse_positive(7)), 7);

@@ -67,7 +67,8 @@ public:
 	 * @param fallback Returned when the key is missing.
 	 * @returns The stored value (possibly empty), or fallback.
 	 */
-	[[nodiscard]] std::string get_string_or(std::string_view section, std::string_view key, std::string_view fallback) const;
+	[[nodiscard]] std::string get_string_or(std::string_view section, std::string_view key,
+		std::string_view fallback) const;
 
 	/**
 	 * Stores a float, written with 3 decimals (e.g. 0.850).

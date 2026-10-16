@@ -17,8 +17,10 @@ namespace
 /** One logged message, as the test sink received it. */
 struct LoggedMessage
 {
-	reshade::log::level level; // How serious it was
-	std::string text;          // The line as ReShade would get it
+	// How serious it was
+	reshade::log::level level;
+	// The line as ReShade would get it
+	std::string text;
 };
 
 // Filled by capture_log while a test runs; tests run on one thread
@@ -26,7 +28,7 @@ std::vector<LoggedMessage> g_logged;
 
 void capture_log(reshade::log::level level, std::string_view message)
 {
-	g_logged.push_back({ level, std::string(message) });
+	g_logged.push_back({ .level = level, .text = std::string(message) });
 }
 
 /**
@@ -53,7 +55,7 @@ protected:
 		std::filesystem::remove_all(m_folder, error);
 	}
 
-	std::filesystem::path get_ini_path() const
+	[[nodiscard]] std::filesystem::path get_ini_path() const
 	{
 		return m_folder / "ds3ea.ini";
 	}
@@ -64,13 +66,13 @@ protected:
 		file << text;
 	}
 
-	std::string read_file() const
+	[[nodiscard]] std::string read_file() const
 	{
 		std::ifstream file(get_ini_path());
 		return std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 	}
 
-	static bool has_logged(reshade::log::level level)
+	[[nodiscard]] static bool has_logged(reshade::log::level level)
 	{
 		for (const LoggedMessage& message : g_logged)
 			if (message.level == level)
@@ -93,6 +95,16 @@ TEST_F(IniSettingsStoreTest, MissingFileReadsDefaults)
 	EXPECT_FALSE(std::filesystem::exists(get_ini_path()));
 	EXPECT_TRUE(has_logged(reshade::log::level::info));
 	EXPECT_FALSE(has_logged(reshade::log::level::error));
+}
+
+TEST_F(IniSettingsStoreTest, UnreadableFileLogsErrorAndReadsDefaults)
+{
+	// A folder in the file's place exists but can't be opened as a file
+	std::filesystem::create_directory(get_ini_path());
+	const ds3ea::IniSettingsStore store(get_ini_path());
+
+	EXPECT_EQ(store.get_int_or("Test", "Value", 7), 7);
+	EXPECT_TRUE(has_logged(reshade::log::level::error));
 }
 
 TEST_F(IniSettingsStoreTest, MissingKeyOrSectionReadsDefault)
@@ -243,5 +255,17 @@ TEST_F(IniSettingsStoreTest, SaveIntoMissingFolderFails)
 
 	EXPECT_FALSE(store.save());
 	EXPECT_TRUE(has_logged(reshade::log::level::error));
+}
+
+TEST_F(IniSettingsStoreTest, SaveThatCantReplaceTheFileFailsAndRemovesTheTemporary)
+{
+	ds3ea::IniSettingsStore store(get_ini_path());
+	store.set_int("Test", "Value", 1);
+	// The temporary file is written, but can't be moved over a folder
+	std::filesystem::create_directory(get_ini_path());
+
+	EXPECT_FALSE(store.save());
+	EXPECT_TRUE(has_logged(reshade::log::level::error));
+	EXPECT_FALSE(std::filesystem::exists(m_folder / "ds3ea.ini.tmp"));
 }
 } // namespace
