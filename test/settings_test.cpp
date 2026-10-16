@@ -67,11 +67,13 @@ TEST_F(SettingsTest, MissingFileGivesDefaults)
 
 TEST_F(SettingsTest, LoadsValuesFromTheFile)
 {
-	write_file("[Tonemapper]\nReplaceGameTonemap=false\n");
+	write_file("[Tonemapper]\nReplaceGameTonemap=false\nExposure=1.250\nApplyLUT=0\n");
 	const ds3ea::IniSettingsStore store(get_ini_path());
 	const ds3ea::Settings settings(store);
 
 	EXPECT_FALSE(settings.get().tonemapper.replace_game_tonemap);
+	EXPECT_FLOAT_EQ(settings.get().tonemapper.exposure, 1.25f);
+	EXPECT_FALSE(settings.get().tonemapper.apply_lut);
 }
 
 TEST_F(SettingsTest, ChangesAreDetectedUntilSaved)
@@ -107,14 +109,14 @@ TEST_F(SettingsTest, SavedValuesLoadAgain)
 
 TEST_F(SettingsTest, SaveKeepsUnknownKeys)
 {
-	write_file("[Tonemapper]\nBloom=0.250\n[Other]\nName=kept\n");
+	write_file("[Tonemapper]\nContrast=0.250\n[Other]\nName=kept\n");
 	ds3ea::IniSettingsStore store(get_ini_path());
 	ds3ea::Settings settings(store);
 	settings.set({ .tonemapper = { .replace_game_tonemap = false } });
 	ASSERT_TRUE(settings.save(store));
 
 	const std::string text = read_file();
-	EXPECT_NE(text.find("Bloom=0.250\n"), std::string::npos) << text;
+	EXPECT_NE(text.find("Contrast=0.250\n"), std::string::npos) << text;
 	EXPECT_NE(text.find("Name=kept\n"), std::string::npos) << text;
 	EXPECT_NE(text.find("ReplaceGameTonemap=false\n"), std::string::npos) << text;
 }

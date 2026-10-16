@@ -72,13 +72,19 @@
 * Aggregates are initialised with designated initializers, Error{ .category = ..., .message = ... }, unless they have
   a single member (clang-tidy)
 * Shaders live in shaders/<name>.hlsl, one per file with a doxygen block saying what it does and who draws it.
-  They are compiled at build time (warnings are errors), before the C++, into src/gen/<name>.h holding the bytecode
-  as k_<name> (generated, not in git; in the source tree so IDEs resolve it); include it as "gen/<name>.h" and create
-  the shader from k_<name>.
+  They are compiled at build time with FXC (cmake/shaders.cmake, shader model 5, warnings are errors), before the
+  C++, into src/gen/<name>.h holding the bytecode as the std::array ds3ea::k_<name> (generated, not in git; in the
+  source tree so IDEs resolve it); include it as "gen/<name>.h" and create the shader from k_<name>. Shared HLSL goes
+  in shaders/<name>.hlsli.
   Game layouts are hardcoded for 1.15.x (the add-on only runs past the version gate), so shader source is never
   generated at runtime.
 * No shader is compiled at runtime and no HLSL lives in C++ strings: settings that change a shader's output go in a
   constant buffer, not in generated source.
+* A constant buffer that C++ fills is declared once, in shaders/<name>_constants.hlsli, which both the shader and the
+  C++ include (as ds3ea::shader::<Type>). It holds only 4-byte scalars (float, and uint for flags: 0 off, 1 on),
+  padded to whole 16-byte registers, so HLSL and C++ lay it out the same.
+* A shader drawn in place of a game draw uses only registers the game's shader doesn't, lists them in its doxygen
+  block, and puts back every piece of pipeline state it changed before returning to the game.
 * Use RAII wherever possible, for D3D11 objects strongly consider automatic lifetime management via ComPtr 
 * No naked new & delete: own objects with std::make_unique, a ComPtr or by value, and never skip cleanup (release
   explicitly when the device goes away) (clang-tidy)

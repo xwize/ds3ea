@@ -20,13 +20,15 @@ struct ShaderReflectionInfo
 	std::vector<std::string> globals = {};
 	// Render target outputs (SV_Target)
 	std::uint32_t output_count = 0;
+	// Bit n is set if the shader reads its TEXCOORDn input
+	std::uint32_t texcoords_read = 0;
 };
 
 /**
  * Reads back what a compiled pixel shader declares: the names of its constant buffers and textures, which of its
- * global variables it uses, and how many render targets it writes. Compiled shader code keeps these names, and D3D
- * can list them (D3D calls this "reflection", hence D3DReflect); DS3's shaders were shipped with them intact.
- * Not unit-tested yet: that needs compiled shader code, which the tests can get once the shader build step exists.
+ * global variables and TEXCOORD inputs it uses, and how many render targets it writes. Compiled shader code keeps
+ * these names, and D3D can list them (D3D calls this "reflection", hence D3DReflect); DS3's shaders were shipped with
+ * them intact.
  * @param code The compiled shader, as the game passed it to CreatePixelShader.
  * @param size Its size in bytes.
  * @returns What the shader declares, or an invalid_data Error if D3D can't read the code.

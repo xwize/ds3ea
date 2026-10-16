@@ -7,6 +7,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <cstring>
 
 namespace
 {
@@ -54,6 +56,30 @@ void read_used_globals(ID3D11ShaderReflection& reflection, ShaderReflectionInfo&
 			info.globals.emplace_back(variable.Name);
 	}
 }
+
+/**
+ * @param reflection D3D's view of the compiled shader.
+ * @param input_count How many inputs its signature declares.
+ * @returns Bit n set for each TEXCOORDn input the shader reads.
+ */
+[[nodiscard]] std::uint32_t read_texcoords_read(ID3D11ShaderReflection& reflection, UINT input_count)
+{
+	// One bit per TEXCOORD index in the result
+	constexpr UINT k_max_texcoords = 32;
+	std::uint32_t texcoords = 0;
+
+	for (UINT index = 0; index < input_count; ++index)
+	{
+		D3D11_SIGNATURE_PARAMETER_DESC input = {};
+		const bool read = SUCCEEDED(reflection.GetInputParameterDesc(index, &input)) && input.ReadWriteMask != 0;
+
+		// Semantics are case-insensitive in HLSL, and the compiled code keeps the case they were written in
+		if (read && _stricmp(input.SemanticName, "TEXCOORD") == 0 && input.SemanticIndex < k_max_texcoords)
+			texcoords |= 1u << input.SemanticIndex;
+	}
+
+	return texcoords;
+}
 } // namespace
 
 namespace ds3ea
@@ -84,6 +110,7 @@ Result<ShaderReflectionInfo> reflect_pixel_shader(const void* code, std::size_t 
 			++info.output_count;
 	}
 
+	info.texcoords_read = read_texcoords_read(*reflection.Get(), desc.InputParameters);
 	return info;
 }
 } // namespace ds3ea

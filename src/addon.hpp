@@ -115,10 +115,10 @@ private:
 	/**
 	 * A draw; the tracker runs the command list's render pass state machine.
 	 * @param cmd_list The command list recording the draw.
-	 * @param vertex_count Unused.
-	 * @param instance_count Unused.
-	 * @param first_vertex Unused.
-	 * @param first_instance Unused.
+	 * @param vertex_count Vertices per instance.
+	 * @param instance_count Instances.
+	 * @param first_vertex First vertex.
+	 * @param first_instance First instance.
 	 * @returns True to skip the game's draw.
 	 */
 	static bool on_draw(reshade::api::command_list* cmd_list, std::uint32_t vertex_count,
@@ -127,11 +127,11 @@ private:
 	/**
 	 * An indexed draw; the tracker runs the command list's render pass state machine.
 	 * @param cmd_list The command list recording the draw.
-	 * @param index_count Unused.
-	 * @param instance_count Unused.
-	 * @param first_index Unused.
-	 * @param vertex_offset Unused.
-	 * @param first_instance Unused.
+	 * @param index_count Indices per instance.
+	 * @param instance_count Instances.
+	 * @param first_index First index.
+	 * @param vertex_offset Added to each index.
+	 * @param first_instance First instance.
 	 * @returns True to skip the game's draw.
 	 */
 	static bool on_draw_indexed(reshade::api::command_list* cmd_list, std::uint32_t index_count,

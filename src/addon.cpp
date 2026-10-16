@@ -49,6 +49,7 @@ Addon::Addon(HMODULE hmod, Key /*key*/)
 	// Every listener is attached before any event can arrive, so the lists never change while handlers read them. The
 	// tracker is the first pipeline listener, so it has a new shader's render pass before any other one runs.
 	m_pipeline_listeners.push_back(&m_tracker);
+	m_pipeline_listeners.push_back(&m_tonemapper);
 	m_tracker.attach(&m_tonemapper);
 	m_device_listeners.push_back(&m_tonemapper);
 
@@ -155,20 +156,35 @@ void Addon::on_bind_pipeline(reshade::api::command_list* cmd_list, reshade::api:
 		{ g_instance->m_tracker.on_bind_pipeline(cmd_list, stages, pipeline.handle); });
 }
 
-bool Addon::on_draw(reshade::api::command_list* cmd_list, std::uint32_t /*vertex_count*/,
-	std::uint32_t /*instance_count*/, std::uint32_t /*first_vertex*/, std::uint32_t /*first_instance*/)
+bool Addon::on_draw(reshade::api::command_list* cmd_list, std::uint32_t vertex_count, std::uint32_t instance_count,
+	std::uint32_t first_vertex, std::uint32_t first_instance)
 {
+	const DrawCall draw = {
+		.kind = DrawKind::draw,
+		.count = vertex_count,
+		.instance_count = instance_count,
+		.first = first_vertex,
+		.vertex_offset = 0,
+		.first_instance = first_instance,
+	};
 	bool skip = false;
-	call_and_catch("draw", [cmd_list, &skip] { skip = g_instance->m_tracker.on_draw(cmd_list); });
+	call_and_catch("draw", [cmd_list, &draw, &skip] { skip = g_instance->m_tracker.on_draw(cmd_list, draw); });
 	return skip;
 }
 
-bool Addon::on_draw_indexed(reshade::api::command_list* cmd_list, std::uint32_t /*index_count*/,
-	std::uint32_t /*instance_count*/, std::uint32_t /*first_index*/, std::int32_t /*vertex_offset*/,
-	std::uint32_t /*first_instance*/)
+bool Addon::on_draw_indexed(reshade::api::command_list* cmd_list, std::uint32_t index_count,
+	std::uint32_t instance_count, std::uint32_t first_index, std::int32_t vertex_offset, std::uint32_t first_instance)
 {
+	const DrawCall draw = {
+		.kind = DrawKind::draw_indexed,
+		.count = index_count,
+		.instance_count = instance_count,
+		.first = first_index,
+		.vertex_offset = vertex_offset,
+		.first_instance = first_instance,
+	};
 	bool skip = false;
-	call_and_catch("draw_indexed", [cmd_list, &skip] { skip = g_instance->m_tracker.on_draw(cmd_list); });
+	call_and_catch("draw_indexed", [cmd_list, &draw, &skip] { skip = g_instance->m_tracker.on_draw(cmd_list, draw); });
 	return skip;
 }
 
@@ -179,8 +195,9 @@ bool Addon::on_draw_or_dispatch_indirect(reshade::api::command_list* cmd_list, r
 	if (type == reshade::api::indirect_command::dispatch)
 		return false;
 
+	const DrawCall draw = { .kind = DrawKind::indirect };
 	bool skip = false;
-	call_and_catch("draw_indirect", [cmd_list, &skip] { skip = g_instance->m_tracker.on_draw(cmd_list); });
+	call_and_catch("draw_indirect", [cmd_list, &draw, &skip] { skip = g_instance->m_tracker.on_draw(cmd_list, draw); });
 	return skip;
 }
 

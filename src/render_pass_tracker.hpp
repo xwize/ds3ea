@@ -64,9 +64,10 @@ public:
 	/**
 	 * Runs the pass state machine for a draw (draw, draw_indexed, draw_or_dispatch_indirect).
 	 * @param cmd_list The command list recording it.
+	 * @param draw Its arguments.
 	 * @returns True if a listener replaced the draw and the game's must be skipped.
 	 */
-	[[nodiscard]] bool on_draw(reshade::api::command_list* cmd_list);
+	[[nodiscard]] bool on_draw(reshade::api::command_list* cmd_list, const DrawCall& draw);
 
 	/** @param cmd_list A deferred command list the game finished recording (FinishCommandList); its pass ends. */
 	void on_close_command_list(reshade::api::command_list* cmd_list);

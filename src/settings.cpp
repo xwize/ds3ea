@@ -22,6 +22,13 @@ template <typename Values, typename ReadOrWrite>
 void for_each_setting(Values& values, const ReadOrWrite& read_or_write)
 {
 	read_or_write("Tonemapper", "ReplaceGameTonemap", values.tonemapper.replace_game_tonemap);
+	read_or_write("Tonemapper", "Exposure", values.tonemapper.exposure);
+	read_or_write("Tonemapper", "WhitePoint", values.tonemapper.white);
+	read_or_write("Tonemapper", "Toe", values.tonemapper.toe);
+	read_or_write("Tonemapper", "Shoulder", values.tonemapper.shoulder);
+	read_or_write("Tonemapper", "Bloom", values.tonemapper.bloom);
+	read_or_write("Tonemapper", "Dither", values.tonemapper.dither);
+	read_or_write("Tonemapper", "ApplyLUT", values.tonemapper.apply_lut);
 }
 
 /**
@@ -39,11 +46,33 @@ void load_value(const IniSettingsStore& store, std::string_view section, std::st
  * @param store The settings file.
  * @param section Section name.
  * @param key Key within the section.
+ * @param value Set from the file; kept if the file doesn't have it.
+ */
+void load_value(const IniSettingsStore& store, std::string_view section, std::string_view key, float& value)
+{
+	value = store.get_float_or(section, key, value);
+}
+
+/**
+ * @param store The settings file.
+ * @param section Section name.
+ * @param key Key within the section.
  * @param value Written to the file.
  */
 void save_value(IniSettingsStore& store, std::string_view section, std::string_view key, bool value)
 {
 	store.set_bool(section, key, value);
+}
+
+/**
+ * @param store The settings file.
+ * @param section Section name.
+ * @param key Key within the section.
+ * @param value Written to the file.
+ */
+void save_value(IniSettingsStore& store, std::string_view section, std::string_view key, float value)
+{
+	store.set_float(section, key, value);
 }
 } // namespace
 

@@ -23,10 +23,11 @@ public:
 	/**
 	 * @param pass The render pass of the draw's pixel shader.
 	 * @param cmd_list The command list recording the draw, passed on to the listeners.
+	 * @param draw The draw's arguments, passed on to the listeners.
 	 * @param listeners Who to tell, in priority order.
 	 * @returns Whether the game's draw runs.
 	 */
-	[[nodiscard]] DrawAction on_draw(RenderPass pass, reshade::api::command_list* cmd_list,
+	[[nodiscard]] DrawAction on_draw(RenderPass pass, reshade::api::command_list* cmd_list, const DrawCall& draw,
 		std::span<IRenderPassListener* const> listeners);
 
 	/**
