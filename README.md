@@ -15,7 +15,7 @@ to build on. Coding rules live in [GUIDELINES.md](GUIDELINES.md).
    ```
 
    The add-on is written to `build/vs/<Config>/ds3ea.addon64`.
-3. Run it in the game: `python scripts/launch_game.py` (see [Running in the game](#running-in-the-game)).
+3. Run it in the game: `python scripts/launch_game.py` (see [Testing in the game](#testing-in-the-game)).
 
 ## Prerequisites
 
@@ -29,8 +29,8 @@ to build on. Coding rules live in [GUIDELINES.md](GUIDELINES.md).
 - Python 3, for `scripts/`
 
 You don't need to run `conan install` yourself. CMake runs it during configure through
-[cmake-conan](https://github.com/conan-io/cmake-conan) (`cmake/conan_provider.cmake`). It builds `fmt`, `gtest`,
-`inipp` and `tl-expected` with the static CRT and C++20 to match the project.
+[cmake-conan](https://github.com/conan-io/cmake-conan) (`cmake/conan_provider.cmake`). It builds the packages in `conanfile.txt` with the
+static CRT and C++20 to match the project.
 
 ### ReShade headers
 
@@ -100,6 +100,18 @@ With clang-cl, Conan builds its own `compiler=clang` packages (and ASan ones for
 half a minute the first time each preset is configured. clang-tidy is off in these presets, since the MSVC builds
 already run it.
 
+### Testing in the game
+
+For development and testing: `python scripts/launch_game.py` installs the newest build, starts the game and loads
+the last save, closes it after 60 seconds and prints the run's `ReShade.log`. `--title-only` stays on the title
+screen. See [scripts/README.md](scripts/README.md).
+
+A Debug build also checks for leaks: it writes `ds3ea_leaks.log` in the game folder, which lists every block the
+add-on still had allocated when it unloaded. An empty file means no leaks, but only after a normal exit (Alt+F4, as
+the launcher does) that unloads the add-on. If the game is killed, the report is never written. DS3 1.15.0 also
+corrupts its own heap at exit, even without ReShade, and that sometimes ends the process (`0xc0000374`) before the
+add-on unloads. `ReShade.log` then has no `Unregistered add-on "DS3EA"` line, and the empty report means nothing.
+
 ## Installing
 
 1. Install ReShade **with full add-on support** (the "ReShade with full add-on support" installer from reshade.me)
@@ -111,33 +123,3 @@ already run it.
 
 Settings live in `ds3ea.ini` in the game's working directory (the `Game` folder). The file is optional: missing
 settings use their defaults.
-
-## Running in the game
-
-`python scripts/launch_game.py` installs the newest build, starts the game and loads the last save, closes it after
-60 seconds and prints the run's `ReShade.log`. `--title-only` stays on the title screen. See
-[scripts/README.md](scripts/README.md).
-
-A Debug build also checks for leaks: it writes `ds3ea_leaks.log` in the game folder, which lists every block the
-add-on still had allocated when it unloaded. An empty file means no leaks, but only after a normal exit (Alt+F4, as
-the launcher does) that unloads the add-on. If the game is killed, the report is never written. DS3 1.15.0 also
-corrupts its own heap at exit, even without ReShade, and that sometimes ends the process (`0xc0000374`) before the
-add-on unloads. `ReShade.log` then has no `Unregistered add-on "DS3EA"` line, and the empty report means nothing.
-
-## Foundation at a glance
-
-Utilities in `src/utils/`, part of the `ds3ea_core` library. Read these before writing your own:
-
-- **Logging**, `utils/logging.hpp`: `log::info("loaded {}", name)` and `error`, `warning`, `debug`, `trace`, all fmt
-  formatted into ReShade's log. `static const log::Once` logs a line only the first time a call site runs.
-- **Errors**, `utils/error.hpp`: `Error`, one failure's category, message and source location, and `ErrorCategory`.
-- **Result**, `utils/result.hpp`: `Result<T>` for hot or simple paths, `make_error(category, "format", args...)` to
-  fail one and `get_or_throw()` to turn a failure into an exception.
-- **Exceptions**, `utils/runtime_error.hpp`: `RuntimeError`, our one exception type, which carries an `Error`.
-- **Boundaries**, `utils/boundary.hpp`: `call_and_catch("event", func)` runs our code where ReShade, D3D11, the game
-  or Windows calls us, logging any exception instead of letting it escape.
-- **Settings**, `utils/ini_settings_store.hpp`: `IniSettingsStore`, typed `get_*_or` / `set_*` values in
-  `ds3ea.ini`. The add-on owns the one instance (`Addon`).
-- **Debug-only code**, `utils/build_config.hpp`: `if constexpr (k_debug_build)` instead of `#ifdef _DEBUG`.
-
-GUIDELINES.md says when to use `Result<T>`, exceptions or `assert`.

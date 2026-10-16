@@ -38,9 +38,7 @@ enum class ErrorCategory
 
 /**
  * Why an operation failed, and where. A default member initializer's std::source_location::current() records where
- * the Error is initialised, so
- * throw RuntimeError({ .category = ErrorCategory::io, .message = fmt::format("cannot write {}", path) });
- * records the throw.
+ * the Error is initialised, so an Error built where a RuntimeError is thrown records the throw.
  */
 struct Error
 {

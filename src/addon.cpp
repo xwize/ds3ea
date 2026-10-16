@@ -27,11 +27,13 @@ Addon::Addon(HMODULE hmod, Key /*key*/)
 	: m_module(hmod)
 	, m_settings(k_ini_file_name)
 {
+	reshade::register_event<reshade::addon_event::init_device>(&Addon::on_init_device);
 	log::info("{} loaded, settings from {}", k_addon_name, m_settings.get_path());
 }
 
 Addon::~Addon()
 {
+	reshade::unregister_event<reshade::addon_event::init_device>(&Addon::on_init_device);
 	log::set_sink(nullptr);
 	reshade::unregister_addon(m_module);
 }
@@ -54,5 +56,10 @@ std::unique_ptr<Addon> Addon::create(HMODULE hmod)
 	}
 
 	return addon;
+}
+
+void Addon::on_init_device(reshade::api::device* /*device*/)
+{
+	call_and_catch("init_device", [] { log::trace("on_init_device called"); });
 }
 } // namespace ds3ea
