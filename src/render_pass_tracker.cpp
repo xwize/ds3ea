@@ -7,16 +7,15 @@
 #include <reshade.hpp>
 
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <span>
 
-namespace
+namespace ds3ea
 {
-using namespace ds3ea;
-
-/** A command list's pass state, stored as ReShade private data on it (keyed by this type's uuid). */
-struct __declspec(uuid("6b3f4c1e-2d5a-4e8b-9f17-0c2d4a6e8b31")) CommandListPasses
+/** Keyed in ReShade's private data by this type's uuid. */
+struct __declspec(uuid("6b3f4c1e-2d5a-4e8b-9f17-0c2d4a6e8b31")) RenderPassTracker::CommandListPasses
 {
 	// Render pass of the pixel shader bound right now
 	RenderPass pixel_pass = RenderPass::unknown;
@@ -24,23 +23,10 @@ struct __declspec(uuid("6b3f4c1e-2d5a-4e8b-9f17-0c2d4a6e8b31")) CommandListPasse
 	RenderPassStateMachine state_machine;
 };
 
-/**
- * @param cmd_list A command list.
- * @returns Its pass state, created on first use: command lists made before we registered have none yet.
- */
-[[nodiscard]] CommandListPasses& get_passes(reshade::api::command_list* cmd_list)
-{
-	CommandListPasses* passes = cmd_list->get_private_data<CommandListPasses>();
+RenderPassTracker::RenderPassTracker() = default;
 
-	if (passes == nullptr)
-		passes = cmd_list->create_private_data<CommandListPasses>();
+RenderPassTracker::~RenderPassTracker() = default;
 
-	return *passes;
-}
-} // namespace
-
-namespace ds3ea
-{
 void RenderPassTracker::attach(IRenderPassListener* listener)
 {
 	m_attached.push_back(listener);
@@ -81,7 +67,8 @@ void RenderPassTracker::on_pipeline_destroyed(std::uint64_t pipeline)
 
 void RenderPassTracker::on_destroy_command_list(reshade::api::command_list* cmd_list)
 {
-	cmd_list->destroy_private_data<CommandListPasses>();
+	const std::lock_guard lock(m_command_list_passes_mutex);
+	m_command_list_passes.erase(cmd_list);
 }
 
 void RenderPassTracker::on_bind_pipeline(reshade::api::command_list* cmd_list, reshade::api::pipeline_stage stages,
@@ -117,6 +104,23 @@ RenderPass RenderPassTracker::get_open_render_pass(reshade::api::command_list* c
 {
 	const CommandListPasses* const passes = cmd_list->get_private_data<CommandListPasses>();
 	return passes != nullptr ? passes->state_machine.get_open_pass() : RenderPass::unknown;
+}
+
+RenderPassTracker::CommandListPasses& RenderPassTracker::get_passes(reshade::api::command_list* cmd_list)
+{
+	CommandListPasses* const passes = cmd_list->get_private_data<CommandListPasses>();
+
+	if (passes != nullptr)
+		return *passes;
+
+	const std::lock_guard lock(m_command_list_passes_mutex);
+	std::unique_ptr<CommandListPasses>& owned = m_command_list_passes[cmd_list];
+	owned = std::make_unique<CommandListPasses>();
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): ReShade's private data API takes the uuid as bytes
+	const auto* const key = reinterpret_cast<const std::uint8_t*>(&__uuidof(CommandListPasses));
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): and the data as a 64-bit value
+	cmd_list->set_private_data(key, reinterpret_cast<std::uintptr_t>(owned.get()));
+	return *owned;
 }
 
 RenderPass RenderPassTracker::find_shader_render_pass(std::uint64_t shader) const

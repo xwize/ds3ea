@@ -6,6 +6,8 @@
 #include "reshade_forward.hpp"
 
 #include <cstdint>
+#include <memory>
+#include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
 #include <vector>
@@ -15,14 +17,25 @@ namespace ds3ea
 /**
  * Knows which render pass is open on each command list, and tells the attached listeners as passes begin, draw and
  * end. DS3 records several command lists at once, each with its own open pass, so the tracker runs one
- * RenderPassStateMachine per command list, kept with the list's bound pass as ReShade private data on the list; the
- * per-draw path takes no lock. Addon forwards ReShade's events to it.
+ * RenderPassStateMachine per command list, kept with the list's bound pass. ReShade private data on the list points at
+ * it, so the per-draw path takes no lock. Addon forwards ReShade's events to it.
  *
  * Attach every listener before the events are registered: the list is read without a lock and must not change.
  */
 class RenderPassTracker : public IPipelineListener
 {
 public:
+	RenderPassTracker();
+
+	/** Frees the state of every command list the game didn't destroy: DS3 exits without destroying them. */
+	~RenderPassTracker() override;
+
+	/** Not copyable or movable: command lists' private data points into it. */
+	RenderPassTracker(const RenderPassTracker&) = delete;
+	RenderPassTracker& operator=(const RenderPassTracker&) = delete;
+	RenderPassTracker(RenderPassTracker&&) = delete;
+	RenderPassTracker& operator=(RenderPassTracker&&) = delete;
+
 	/**
 	 * Adds a listener; earlier listeners get first claim on a draw.
 	 * @param listener Not owned: it must outlive the tracker's last event.
@@ -68,6 +81,15 @@ public:
 	[[nodiscard]] RenderPass get_open_render_pass(reshade::api::command_list* cmd_list) const;
 
 private:
+	/** A command list's pass state. */
+	struct CommandListPasses;
+
+	/**
+	 * @param cmd_list A command list, on the thread recording it.
+	 * @returns Its pass state, created on first use: command lists made before we registered have none yet.
+	 */
+	[[nodiscard]] CommandListPasses& get_passes(reshade::api::command_list* cmd_list);
+
 	/**
 	 * @param shader A pixel shader's handle.
 	 * @returns The render pass recorded for it when the game created it, or RenderPass::unknown.
@@ -79,6 +101,11 @@ private:
 	// destruction (any thread, often loader threads), read on every pixel shader bind, hence the shared_mutex.
 	std::unordered_map<std::uint64_t, RenderPass> m_shader_render_passes;
 	mutable std::shared_mutex m_shader_render_passes_mutex;
+	// Each command list's pass state, owned here so what the game never destroys is still freed. The list's private
+	// data points at its entry, so draws find it without the lock, which is taken only when a list is first seen or
+	// destroyed.
+	std::unordered_map<reshade::api::command_list*, std::unique_ptr<CommandListPasses>> m_command_list_passes;
+	std::mutex m_command_list_passes_mutex;
 	std::vector<IRenderPassListener*> m_attached;
 };
 } // namespace ds3ea
