@@ -8,10 +8,10 @@
 namespace ds3ea
 {
 /**
- * The add-on's settings file (ds3ea.ini): typed values by section and key, read once at construction and written
- * back by save(). A missing file reads as defaults and save() creates it. Failures to read or write the file are
- * logged. Keys the code never touches are kept, so a save never drops another feature's (or a newer version's)
- * settings. Comments and blank lines are not kept, and section and key names are case-sensitive.
+ * The add-on's settings file (ds3ea.ini): typed values by section and key, read at construction (and by reload())
+ * and written back by save(). A missing file reads as defaults and save() creates it. Failures to read or write the
+ * file are logged. Keys the code never touches are kept, so a save never drops another feature's (or a newer
+ * version's) settings. Comments and blank lines are not kept, and section and key names are case-sensitive.
  *
  * Not thread-safe: use it from one thread at a time.
  */
@@ -107,7 +107,19 @@ public:
 	 * Writes every section and key to the file, through a temporary file so a failed write leaves the old file intact.
 	 * @returns True if the file was written.
 	 */
-	[[nodiscard]] bool save() const;
+	[[nodiscard]] bool save();
+
+	/**
+	 * Reads the file again, replacing every section and key. A file that can't be opened leaves the store as it was.
+	 * @returns True if the file was read.
+	 */
+	[[nodiscard]] bool reload();
+
+	/**
+	 * @returns True if the file's last-write time differs from when this store last read or saved it, i.e. someone
+	 *          else wrote it. False while the file doesn't exist.
+	 */
+	[[nodiscard]] bool is_changed_on_disk() const;
 
 	/** @returns The path given at construction. */
 	[[nodiscard]] const std::filesystem::path& get_path() const;

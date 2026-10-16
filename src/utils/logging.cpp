@@ -40,7 +40,7 @@ std::atomic<log::Sink> g_sink = nullptr;
 
 namespace ds3ea::log
 {
-void set_sink(Sink sink)
+void set_sink(Sink sink) noexcept
 {
 	g_sink.store(sink);
 }

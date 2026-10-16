@@ -22,12 +22,15 @@ function(ds3ea_clang_tidy target)
 	endif()
 
 	if(CMAKE_GENERATOR MATCHES "Visual Studio")
-		# CMake's CXX_CLANG_TIDY isn't implemented for the Visual Studio generators, so use MSBuild's code analysis
+		# CMake's CXX_CLANG_TIDY isn't implemented for the Visual Studio generators, so use MSBuild's code analysis.
+		# MSBuild passes --checks=clang-analyzer-* unless ClangTidyChecks is set, which turns the analyzer check
+		# .clang-tidy disables back on, so it passes that exclusion instead.
 		cmake_path(GET DS3EA_CLANG_TIDY_EXE PARENT_PATH tidy_dir)
 		cmake_path(GET DS3EA_CLANG_TIDY_EXE FILENAME tidy_exe)
 		set_target_properties(${target} PROPERTIES
 			VS_GLOBAL_RunCodeAnalysis true
 			VS_GLOBAL_EnableClangTidyCodeAnalysis true
+			VS_GLOBAL_ClangTidyChecks "-clang-analyzer-optin.core.EnumCastOutOfRange"
 			VS_GLOBAL_EnableMicrosoftCodeAnalysis false
 			VS_GLOBAL_ClangTidyToolPath "${tidy_dir}"
 			VS_GLOBAL_ClangTidyToolExe "${tidy_exe}"

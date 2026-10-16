@@ -5,6 +5,8 @@
 # Disabled, with the reason:
 #   - bugprone-easily-swappable-parameters: (section, key) string pairs and similar are inherent to the APIs; names
 #     and tests guard against swaps
+#   - clang-analyzer-optin.core.EnumCastOutOfRange: reports MSVC's own <filesystem> (std::filesystem::last_write_time
+#     combines flag values in an enum), at a line in the STL header that no NOLINT of ours can reach
 #   - cppcoreguidelines-avoid-non-const-global-variables: GUIDELINES.md allows module state at file scope with g_
 #   - cppcoreguidelines-owning-memory: needs gsl::owner, which we don't use; naked new/delete are custom checks below
 #   - performance-enum-size: our enums are never stored in bulk, so int-sized is fine
@@ -13,6 +15,7 @@ Checks: >
   bugprone-*,
   -bugprone-easily-swappable-parameters,
   clang-analyzer-*,
+  -clang-analyzer-optin.core.EnumCastOutOfRange,
   cppcoreguidelines-*,
   -cppcoreguidelines-avoid-non-const-global-variables,
   -cppcoreguidelines-owning-memory,
