@@ -28,7 +28,8 @@ void begin_pass(RenderPass pass, reshade::api::command_list* cmd_list, std::span
  * @param listeners Who to ask, in priority order.
  * @returns skip if a listener replaced the draw.
  */
-[[nodiscard]] DrawAction draw(RenderPass pass, reshade::api::command_list* cmd_list, std::span<IRenderPassListener* const> listeners)
+[[nodiscard]] DrawAction draw(RenderPass pass, reshade::api::command_list* cmd_list,
+	std::span<IRenderPassListener* const> listeners)
 {
 	DrawAction action = DrawAction::keep;
 

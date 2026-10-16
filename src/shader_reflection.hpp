@@ -13,11 +13,11 @@ namespace ds3ea
 struct ShaderReflectionInfo
 {
 	// Constant buffer names, e.g. "cbMatDynParam"
-	std::vector<std::string> cbuffers;
+	std::vector<std::string> cbuffers = {};
 	// Texture and buffer names, e.g. "atex3D_Texture"
-	std::vector<std::string> resources;
+	std::vector<std::string> resources = {};
 	// Variables of $Globals the shader actually uses, e.g. "fParam_TonemapMaxMappingLuminance"
-	std::vector<std::string> globals;
+	std::vector<std::string> globals = {};
 	// Render target outputs (SV_Target)
 	std::uint32_t output_count = 0;
 };
