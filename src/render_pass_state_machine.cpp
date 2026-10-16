@@ -23,14 +23,15 @@ void begin_pass(RenderPass pass, reshade::api::command_list* cmd_list, std::span
 }
 
 /**
- * @param listener Who to ask.
+ * Calls the listener's draw hook for the pass: on_tonemap_draw or on_color_grading_draw.
+ * @param listener The listener.
  * @param pass The pass of the draw; tonemap or color_grading, the passes with a draw hook.
  * @param cmd_list Its command list.
  * @param draw Its arguments.
  * @param claimed True if an earlier listener already replaces the draw.
- * @returns The listener's answer.
+ * @returns What the listener wants done with the game's draw.
  */
-[[nodiscard]] DrawAction ask(IRenderPassListener& listener, RenderPass pass, reshade::api::command_list* cmd_list,
+[[nodiscard]] DrawAction call_draw_hook(IRenderPassListener& listener, RenderPass pass, reshade::api::command_list* cmd_list,
 	const DrawCallArgs& draw, bool claimed)
 {
 	if (pass == RenderPass::tonemap)
@@ -58,7 +59,7 @@ void begin_pass(RenderPass pass, reshade::api::command_list* cmd_list, std::span
 	{
 		const bool claimed = action == DrawAction::skip;
 
-		if (ask(*listener, pass, cmd_list, draw, claimed) == DrawAction::skip)
+		if (call_draw_hook(*listener, pass, cmd_list, draw, claimed) == DrawAction::skip)
 			action = DrawAction::skip;
 	}
 
