@@ -8,6 +8,7 @@
 
 #include <reshade.hpp>
 
+#include <cstdint>
 #include <memory>
 
 namespace
@@ -58,8 +59,12 @@ std::unique_ptr<Addon> Addon::create(HMODULE hmod)
 	return addon;
 }
 
-void Addon::on_init_device(reshade::api::device* /*device*/)
+void Addon::on_init_device(reshade::api::device* device)
 {
-	call_and_catch("init_device", [] { log::trace("on_init_device called"); });
+	call_and_catch("init_device", [device]
+	{
+		const auto api = static_cast<std::uint32_t>(device->get_api());
+		log::trace("on_init_device called (device api {:#x})", api);
+	});
 }
 } // namespace ds3ea
