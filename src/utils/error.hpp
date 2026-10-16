@@ -65,6 +65,7 @@ struct FormatWithLocation
 	 */
 	template <typename String>
 		requires std::convertible_to<const String&, std::string_view>
+	// NOLINTNEXTLINE Intentional implicit conversion
 	consteval FormatWithLocation(const String& text, std::source_location location = std::source_location::current())
 		: format(text)
 		, location(location)
