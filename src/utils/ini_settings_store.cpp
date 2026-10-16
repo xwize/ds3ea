@@ -62,7 +62,7 @@ public:
 	 * @param key Key within the section.
 	 * @returns The value, or nullptr if the section or key is missing.
 	 */
-	const std::string* find(std::string_view section, std::string_view key) const
+	[[nodiscard]] const std::string* find(std::string_view section, std::string_view key) const
 	{
 		const auto section_it = m_ini.sections.find(std::string(section));
 		if (section_it == m_ini.sections.end())
@@ -83,7 +83,7 @@ public:
 	}
 
 	/** @returns True if the file was written and moved over the old one. */
-	bool save() const
+	[[nodiscard]] bool save() const
 	{
 		std::filesystem::path temp_path = m_path;
 		temp_path += L".tmp";
@@ -107,7 +107,7 @@ public:
 	}
 
 	/** @returns The file this store loads from and saves to. */
-	const std::filesystem::path& get_path() const
+	[[nodiscard]] const std::filesystem::path& get_path() const
 	{
 		return m_path;
 	}
@@ -119,7 +119,7 @@ private:
 	 * @param path File to create or overwrite.
 	 * @returns True if every byte was written.
 	 */
-	bool write(const std::filesystem::path& path) const
+	[[nodiscard]] bool write(const std::filesystem::path& path) const
 	{
 		std::ofstream file(path, std::ios::trunc);
 		for (const auto& [name, section] : m_ini.sections)

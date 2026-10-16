@@ -18,7 +18,7 @@ public:
 	explicit RuntimeError(Error error);
 
 	/** @returns Why it failed and where it was raised. */
-	const Error& get_error() const;
+	[[nodiscard]] const Error& get_error() const;
 
 private:
 	Error m_error;

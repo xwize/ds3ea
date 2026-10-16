@@ -34,7 +34,7 @@ enum class ErrorCategory
  * @param category The category to name.
  * @returns The category's name for logging, e.g. "not_found".
  */
-std::string_view get_category_name(ErrorCategory category);
+[[nodiscard]] std::string_view get_category_name(ErrorCategory category);
 
 /**
  * Why an operation failed, and where. A default member initializer's std::source_location::current() records where
@@ -65,7 +65,8 @@ struct FormatWithLocation
 	 */
 	template <typename String>
 		requires std::convertible_to<const String&, std::string_view>
-	consteval FormatWithLocation(const String& text, std::source_location location = std::source_location::current())
+	consteval explicit FormatWithLocation(const String& text,
+			std::source_location location = std::source_location::current())
 		: format(text)
 		, location(location)
 	{

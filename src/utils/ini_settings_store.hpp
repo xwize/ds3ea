@@ -106,7 +106,7 @@ public:
 	 * Writes every section and key to the file, through a temporary file so a failed write leaves the old file intact.
 	 * @returns True if the file was written.
 	 */
-	bool save() const;
+	[[nodiscard]] bool save() const;
 
 	/** @returns The path given at construction. */
 	[[nodiscard]] const std::filesystem::path& get_path() const;
