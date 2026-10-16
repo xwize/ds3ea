@@ -65,8 +65,7 @@ struct FormatWithLocation
 	 */
 	template <typename String>
 		requires std::convertible_to<const String&, std::string_view>
-	consteval explicit FormatWithLocation(const String& text,
-			std::source_location location = std::source_location::current())
+	consteval FormatWithLocation(const String& text, std::source_location location = std::source_location::current())
 		: format(text)
 		, location(location)
 	{
