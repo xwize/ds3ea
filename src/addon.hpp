@@ -6,11 +6,16 @@
 #include "settings.hpp"
 #include "tonemapper.hpp"
 #include "utils/ini_settings_store.hpp"
-// Not utils/reshade_forward.hpp: the handlers take ReShade's handle types (pipeline, resource) by value, which are
-// typedefs of unnamed structs and can't be forward-declared
-#include "utils/reshade_with_imgui.hpp"
+
+// register_addon(), called in addon.cpp, only fetches ReShade's ImGui functions for addon_ui.cpp's overlay when
+// imgui.h comes before reshade.hpp. Including it here puts it first in every file of Addon.
+// NOLINTNEXTLINE(misc-include-cleaner): used by the reshade.hpp below, see above
+#include <imgui.h>
 
 #include <Windows.h>
+// Not utils/reshade_forward.hpp: the handlers take ReShade's handle types (pipeline, resource) by value, which are
+// typedefs of unnamed structs and can't be forward-declared
+#include <reshade.hpp>
 
 #include <chrono>
 #include <cstdint>

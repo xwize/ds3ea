@@ -6,22 +6,6 @@
 
 namespace ds3ea
 {
-/** The Tonemapper's settings, in ds3ea.ini's [Tonemapper] section. */
-struct TonemapperSettings
-{
-	bool replace_game_tonemap = true; // Claim the game's tonemap draw and draw the stand-in instead
-
-	bool operator==(const TonemapperSettings&) const = default;
-};
-
-/** Every setting the add-on changes at runtime, one struct per feature. Each field's default is its initialiser. */
-struct SettingsValues
-{
-	TonemapperSettings tonemapper; // [Tonemapper]
-
-	bool operator==(const SettingsValues&) const = default;
-};
-
 /**
  * The add-on's runtime settings, loaded from and saved to an IniSettingsStore. It knows whether the values changed
  * since they were last loaded or saved, by comparing them with a copy of what was saved.
@@ -38,6 +22,24 @@ public:
 	 * @param store The loaded settings file.
 	 */
 	explicit Settings(const IniSettingsStore& store);
+
+	/** The Tonemapper's settings, in ds3ea.ini's [Tonemapper] section. */
+	struct TonemapperValues
+	{
+		// Claim the game's tonemap draw and draw the stand-in instead
+		bool replace_game_tonemap = true;
+
+		bool operator==(const TonemapperValues&) const = default;
+	};
+
+	/** Every setting the add-on changes at runtime, one struct per feature. Each field's default is its initialiser. */
+	struct Values
+	{
+		// [Tonemapper]
+		TonemapperValues tonemapper;
+
+		bool operator==(const Values&) const = default;
+	};
 
 	/**
 	 * Reads every setting from the store, keeping a setting's last saved value when the store doesn't have it, and
@@ -62,10 +64,10 @@ public:
 	void reload_if_changed_on_disk(IniSettingsStore& store);
 
 	/** @returns A copy of the current values. */
-	[[nodiscard]] SettingsValues get() const;
+	[[nodiscard]] Values get() const;
 
 	/** @param values Replaces the current values. */
-	void set(const SettingsValues& values);
+	void set(const Values& values);
 
 	/** @returns True if the values differ from the ones last loaded or saved. */
 	[[nodiscard]] bool has_unsaved_changes() const;
@@ -73,8 +75,8 @@ public:
 private:
 	mutable std::mutex m_mutex;
 	// Guarded by m_mutex
-	SettingsValues m_values;
+	Values m_values;
 	// Guarded by m_mutex: the values as last loaded or saved
-	SettingsValues m_saved;
+	Values m_saved;
 };
 } // namespace ds3ea

@@ -102,8 +102,8 @@
   passes, device, pipelines); every hook has a no-op default body (a hook returning a DrawAction returns keep), and
   implementations mark each one override. Render pass hooks are per command list: begin and end are notifications,
   and a draw is claimed from that pass's on_<pass>_draw hook
-* ReShade is included through utils/reshade_with_imgui.hpp, never <reshade.hpp> directly: ReShade's overlay only
-  gets its ImGui functions when imgui.h comes first in every file
+* Any file that calls reshade::register_addon or uses ImGui includes <imgui.h> before <reshade.hpp> (addon.hpp does
+  it for Addon's files): register_addon only fetches ReShade's ImGui functions when imgui.h came first
 * Addon is the composition root and the only place ReShade events are registered. It owns the features by value
   and attaches every listener in its constructor, before registering any event; attach order is the claim priority
 * Conan for packages 

@@ -37,7 +37,7 @@ using Sink = void (*)(reshade::log::level level, std::string_view line);
  * Installs the sink that receives every line from now on.
  * @param sink The new sink, or nullptr to drop lines.
  */
-void set_sink(Sink sink);
+void set_sink(Sink sink) noexcept;
 
 /**
  * The add-on's sink: writes a line to ReShade's log. Only call it while ReShade has the add-on loaded.

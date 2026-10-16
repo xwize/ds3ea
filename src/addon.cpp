@@ -7,7 +7,6 @@
 #include "utils/build_config.hpp"
 #include "utils/ini_settings_store.hpp"
 #include "utils/logging.hpp"
-#include "utils/reshade_with_imgui.hpp"
 
 #include <fmt/std.h>
 
@@ -75,9 +74,12 @@ Addon::~Addon()
 	reshade::unregister_addon(m_module);
 	g_instance = nullptr;
 
-	if (m_settings.has_unsaved_changes())
-		static_cast<void>(m_settings.save(m_settings_file));
-
+	// A destructor must not throw, so the save goes through call_and_catch like any other boundary
+	call_and_catch("settings save at exit", [this]
+	{
+		if (m_settings.has_unsaved_changes())
+			static_cast<void>(m_settings.save(m_settings_file));
+	});
 	log::set_sink(nullptr);
 }
 

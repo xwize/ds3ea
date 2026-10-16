@@ -61,7 +61,7 @@ TEST_F(SettingsTest, MissingFileGivesDefaults)
 	const ds3ea::IniSettingsStore store(get_ini_path());
 	const ds3ea::Settings settings(store);
 
-	EXPECT_EQ(settings.get(), ds3ea::SettingsValues{});
+	EXPECT_EQ(settings.get(), ds3ea::Settings::Values{});
 	EXPECT_FALSE(settings.has_unsaved_changes());
 }
 
@@ -78,7 +78,7 @@ TEST_F(SettingsTest, ChangesAreDetectedUntilSaved)
 {
 	ds3ea::IniSettingsStore store(get_ini_path());
 	ds3ea::Settings settings(store);
-	ds3ea::SettingsValues values = settings.get();
+	ds3ea::Settings::Values values = settings.get();
 
 	settings.set(values);
 	EXPECT_FALSE(settings.has_unsaved_changes());

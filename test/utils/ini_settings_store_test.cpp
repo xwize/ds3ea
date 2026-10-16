@@ -1,8 +1,9 @@
 #include "utils/ini_settings_store.hpp"
 #include "utils/logging.hpp"
-#include "utils/reshade_with_imgui.hpp"
 
 #include <gtest/gtest.h>
+
+#include <reshade.hpp>
 
 #include <filesystem>
 #include <fstream>

@@ -2,8 +2,9 @@
 #include "render_pass.hpp"
 #include "render_pass_state_machine.hpp"
 #include "utils/logging.hpp"
-#include "utils/reshade_with_imgui.hpp"
 #include "utils/shader_reflection.hpp"
+
+#include <reshade.hpp>
 
 #include <cstdint>
 #include <memory>

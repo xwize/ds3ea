@@ -98,11 +98,11 @@ CheckOptions:
   readability-function-cognitive-complexity.Threshold: 25
   readability-function-size.NestingThreshold: 4
   readability-function-size.ParameterThreshold: 6
-  # Report unused includes only, not symbols that come through another header. Windows.h, reshade.hpp and our
-  # utils/reshade_with_imgui.hpp are the ways in to the types they pull from their sub-headers, and fmt/std.h only
-  # adds formatters, which the check can't see.
+  # Report unused includes only, not symbols that come through another header. Windows.h and reshade.hpp are the
+  # documented ways in to the types they pull from their sub-headers, and fmt/std.h only adds formatters, which the
+  # check can't see.
   misc-include-cleaner.MissingIncludes: false
-  misc-include-cleaner.IgnoreHeaders: 'Windows\.h;fmt[\\/]std\.h;reshade\.hpp;reshade_with_imgui\.hpp'
+  misc-include-cleaner.IgnoreHeaders: 'Windows\.h;fmt[\\/]std\.h;reshade\.hpp'
 # Report only our own headers: not ReShade (repos/ or the copy cmake/reshade.cmake fetches into _deps/), Conan
 # packages or generated code
 HeaderFilterRegex: '.*[\\/](src|test)[\\/].*'

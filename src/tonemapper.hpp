@@ -33,7 +33,7 @@ public:
 private:
 	const Settings* m_settings;
 	// The replace_game_tonemap value of the last tonemap draw, to log when it changes; tonemap draws only
-	std::atomic<bool> m_replacing;
+	std::atomic<bool> m_is_replacing;
 	// The game's device, for creating our GPU resources. Also released when the add-on unloads, since DS3 exits
 	// without destroying its device.
 	Microsoft::WRL::ComPtr<ID3D11Device> m_device;

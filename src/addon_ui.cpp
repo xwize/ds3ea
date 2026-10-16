@@ -1,12 +1,13 @@
 #include "addon.hpp"
 #include "settings.hpp"
-#include "utils/reshade_with_imgui.hpp"
+
+#include <imgui.h>
 
 namespace ds3ea
 {
 void Addon::draw_settings()
 {
-	SettingsValues values = m_settings.get();
+	Settings::Values values = m_settings.get();
 	bool changed = false;
 
 	if (ImGui::CollapsingHeader("Tonemapper", ImGuiTreeNodeFlags_DefaultOpen))

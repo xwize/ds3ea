@@ -12,14 +12,16 @@ namespace
 using namespace ds3ea;
 
 /**
- * The ini section and key of every setting, written once for both loading and saving.
+ * The one list of where each setting lives in the ini, shared by load() and save() so they can't drift apart. Calls
+ * read_or_write(section, key, field) for every setting: load() passes a function that reads the field from the
+ * store, save() one that writes it.
  * @param values The settings (const when saving).
- * @param field Called with the section, the key and a reference to the field.
+ * @param read_or_write Reads or writes one field, given its section and key.
  */
-template <typename Values, typename Field>
-void for_each_setting(Values& values, const Field& field)
+template <typename Values, typename ReadOrWrite>
+void for_each_setting(Values& values, const ReadOrWrite& read_or_write)
 {
-	field("Tonemapper", "ReplaceGameTonemap", values.tonemapper.replace_game_tonemap);
+	read_or_write("Tonemapper", "ReplaceGameTonemap", values.tonemapper.replace_game_tonemap);
 }
 
 /**
@@ -55,7 +57,7 @@ Settings::Settings(const IniSettingsStore& store)
 void Settings::load(const IniSettingsStore& store)
 {
 	const std::lock_guard lock(m_mutex);
-	SettingsValues values = m_saved;
+	Values values = m_saved;
 	for_each_setting(values, [&store](std::string_view section, std::string_view key, auto& value)
 		{ load_value(store, section, key, value); });
 	m_values = values;
@@ -64,7 +66,7 @@ void Settings::load(const IniSettingsStore& store)
 
 bool Settings::save(IniSettingsStore& store)
 {
-	const SettingsValues values = get();
+	const Values values = get();
 	for_each_setting(values, [&store](std::string_view section, std::string_view key, auto value)
 		{ save_value(store, section, key, value); });
 
@@ -88,13 +90,13 @@ void Settings::reload_if_changed_on_disk(IniSettingsStore& store)
 	log::info("Reloaded settings from {}", store.get_path());
 }
 
-SettingsValues Settings::get() const
+Settings::Values Settings::get() const
 {
 	const std::lock_guard lock(m_mutex);
 	return m_values;
 }
 
-void Settings::set(const SettingsValues& values)
+void Settings::set(const Values& values)
 {
 	const std::lock_guard lock(m_mutex);
 	m_values = values;

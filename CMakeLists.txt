@@ -90,7 +90,6 @@ add_library(ds3ea_core STATIC
 	src/utils/logging.cpp
 	src/utils/logging.hpp
 	src/utils/reshade_forward.hpp
-	src/utils/reshade_with_imgui.hpp
 	src/utils/result.hpp
 	src/utils/runtime_error.cpp
 	src/utils/runtime_error.hpp

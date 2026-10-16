@@ -1,8 +1,8 @@
 #include "tonemapper.hpp"
 #include "utils/logging.hpp"
-#include "utils/reshade_with_imgui.hpp"
 
 #include <d3d11.h>
+#include <reshade.hpp>
 #include <wrl/client.h>
 
 #include <array>
@@ -43,7 +43,7 @@ namespace ds3ea
 {
 Tonemapper::Tonemapper(const Settings& settings)
 	: m_settings(&settings)
-	, m_replacing(settings.get().tonemapper.replace_game_tonemap)
+	, m_is_replacing(settings.get().tonemapper.replace_game_tonemap)
 {
 }
 
@@ -52,7 +52,7 @@ void Tonemapper::on_device_created(reshade::api::device* device)
 	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast, performance-no-int-to-ptr): ReShade's API
 	m_device = reinterpret_cast<ID3D11Device*>(device->get_native());
 	log::info("Tonemapper: device created, D3D11 feature level {:#x}, {} the game's tonemap",
-		static_cast<std::uint32_t>(m_device->GetFeatureLevel()), m_replacing ? "replacing" : "keeping");
+		static_cast<std::uint32_t>(m_device->GetFeatureLevel()), m_is_replacing ? "replacing" : "keeping");
 }
 
 void Tonemapper::on_device_destroyed(reshade::api::device* /*device*/)
@@ -68,14 +68,15 @@ void Tonemapper::on_tonemap_begin(reshade::api::command_list* cmd_list)
 
 DrawAction Tonemapper::on_tonemap_draw(reshade::api::command_list* cmd_list, bool claimed)
 {
-	const bool replace = m_settings->get().tonemapper.replace_game_tonemap;
+	const bool should_replace = m_settings->get().tonemapper.replace_game_tonemap;
+
 	static const log::Once first(log::Level::info, "Tonemapper: first tonemap draw, claimed {}, {}", claimed,
-		replace ? "replacing it" : "keeping it");
+		should_replace ? "replacing it" : "keeping it");
 
-	if (m_replacing.exchange(replace) != replace)
-		log::info("Tonemapper: now {} the game's tonemap", replace ? "replacing" : "keeping");
+	if (m_is_replacing.exchange(should_replace) != should_replace)
+		log::info("Tonemapper: now {} the game's tonemap", should_replace ? "replacing" : "keeping");
 
-	if (!replace || claimed)
+	if (!should_replace || claimed)
 		return DrawAction::keep;
 
 	draw_replacement(*get_d3d11_context(cmd_list));
