@@ -47,25 +47,6 @@ constexpr std::size_t k_vignette_texcoord = 2;
 }
 
 /**
- * @param value A setting.
- * @param range Its range.
- * @returns The value, clamped to the range.
- */
-[[nodiscard]] float clamp_to(float value, SettingRange range)
-{
-	return std::clamp(value, range.min, range.max);
-}
-
-/**
- * @param flag A setting or variant flag.
- * @returns The flag as the shader's uint: 1 on, 0 off.
- */
-[[nodiscard]] shader::uint to_shader_flag(bool flag)
-{
-	return flag ? 1u : 0u;
-}
-
-/**
  * @param settings The tonemap settings, clamped to their ranges.
  * @param variant The variant of the game's tonemap being replaced.
  * @param is_graded True if the game's grading inputs (fade, LUT) are bound for the shader to apply.
@@ -75,16 +56,16 @@ constexpr std::size_t k_vignette_texcoord = 2;
 	TonemapVariant variant, bool is_graded)
 {
 	return {
-		.exposure = clamp_to(settings.exposure, k_exposure_range) * k_exposure_bias,
-		.white = clamp_to(settings.white, k_white_range),
-		.toe = clamp_to(settings.toe, k_toe_range),
-		.shoulder = clamp_to(settings.shoulder, k_shoulder_range),
-		.bloom_strength = clamp_to(settings.bloom, k_bloom_range),
-		.has_vignette = to_shader_flag(variant.has_vignette),
-		.has_color_matrix = to_shader_flag(variant.has_color_matrix),
-		.is_graded = to_shader_flag(is_graded),
-		.apply_lut = to_shader_flag(settings.apply_lut),
-		.dither = to_shader_flag(settings.dither),
+		.exposure = std::clamp(settings.exposure, k_exposure_range.min, k_exposure_range.max) * k_exposure_bias,
+		.white = std::clamp(settings.white, k_white_range.min, k_white_range.max),
+		.toe = std::clamp(settings.toe, k_toe_range.min, k_toe_range.max),
+		.shoulder = std::clamp(settings.shoulder, k_shoulder_range.min, k_shoulder_range.max),
+		.bloom_strength = std::clamp(settings.bloom, k_bloom_range.min, k_bloom_range.max),
+		.has_vignette = static_cast<shader::uint>(variant.has_vignette),
+		.has_color_matrix = static_cast<shader::uint>(variant.has_color_matrix),
+		.is_graded = static_cast<shader::uint>(is_graded),
+		.apply_lut = static_cast<shader::uint>(settings.apply_lut),
+		.dither = static_cast<shader::uint>(settings.dither),
 		.padding_0 = 0,
 		.padding_1 = 0,
 	};
