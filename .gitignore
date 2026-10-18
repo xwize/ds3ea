@@ -8,3 +8,4 @@ wiki/spikes/
 .idea/
 cmake-build-*/
 CMakeUserPresets.json
+releases/
