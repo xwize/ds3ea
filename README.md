@@ -1,5 +1,7 @@
 # DS3 Enhancement Add-on (DS3EA)
 
+*Note: This project was an experiment in agentic coding workflows and reverse engineering*
+
 A [ReShade](https://reshade.me) add-on for Dark Souls 3 that improves the game and gives other modders a foundation
 to build on. Coding rules live in [GUIDELINES.md](GUIDELINES.md).
 
