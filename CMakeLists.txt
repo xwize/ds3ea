@@ -83,6 +83,8 @@ add_library(ds3ea_core STATIC
 	src/settings.cpp
 	src/settings.hpp
 	src/utils/boundary.hpp
+	src/utils/byte_pattern.cpp
+	src/utils/byte_pattern.hpp
 	src/utils/build_config.hpp
 	src/utils/error.cpp
 	src/utils/error.hpp
@@ -90,6 +92,8 @@ add_library(ds3ea_core STATIC
 	src/utils/ini_settings_store.hpp
 	src/utils/logging.cpp
 	src/utils/logging.hpp
+	src/utils/memory_patch.cpp
+	src/utils/memory_patch.hpp
 	src/utils/reshade_forward.hpp
 	src/utils/result.hpp
 	src/utils/runtime_error.cpp
@@ -114,6 +118,8 @@ if(NOT DS3EA_SANITIZE)
 		src/addon_info.hpp
 		src/addon_ui.cpp
 		src/dll_main.cpp
+		src/intro_skipper.cpp
+		src/intro_skipper.hpp
 		src/render_pass_tracker.cpp
 		src/render_pass_tracker.hpp
 		src/tonemap_renderer.cpp
@@ -121,7 +127,8 @@ if(NOT DS3EA_SANITIZE)
 		src/tonemapper.cpp
 		src/tonemapper.hpp
 	)
-	target_link_libraries(ds3ea PRIVATE ds3ea_options ds3ea_core reshade::headers fmt::fmt)
+	# version for GetFileVersionInfoW (the game's version)
+	target_link_libraries(ds3ea PRIVATE ds3ea_options ds3ea_core reshade::headers fmt::fmt version)
 	add_dependencies(ds3ea ds3ea_shaders)
 	ds3ea_clang_tidy(ds3ea)
 	# ReShade loads add-ons by extension, so the DLL is ds3ea.addon64

@@ -5,9 +5,11 @@ add_executable(ds3ea_tests
 	render_pass_state_machine_test.cpp
 	render_pass_test.cpp
 	settings_test.cpp
+	utils/byte_pattern_test.cpp
 	utils/error_test.cpp
 	utils/ini_settings_store_test.cpp
 	utils/logging_test.cpp
+	utils/memory_patch_test.cpp
 	utils/result_test.cpp
 	utils/runtime_error_test.cpp
 	utils/shader_reflection_test.cpp

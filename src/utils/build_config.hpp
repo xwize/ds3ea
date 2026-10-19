@@ -11,4 +11,7 @@ constexpr bool k_debug_build = true;
 #else
 constexpr bool k_debug_build = false;
 #endif
+
+/** Builds the add-on with IntroSkipper patching the game to skip its intro logos. */
+constexpr bool k_skip_intro_in_build = true;
 } // namespace ds3ea
