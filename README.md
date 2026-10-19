@@ -7,6 +7,7 @@ to build on. Coding rules live in [GUIDELINES.md](GUIDELINES.md).
 
 ## Currently supported features: 
 * Tonemapper replacement with bloom control.
+* Skipping intro screens.
 
 ## Getting started
 
