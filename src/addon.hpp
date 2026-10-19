@@ -1,5 +1,6 @@
 #pragma once
 
+#include "intro_skipper.hpp"
 #include "listeners/device_listener.hpp"
 #include "listeners/pipeline_listener.hpp"
 #include "render_pass_tracker.hpp"
@@ -190,6 +191,8 @@ private:
 	Settings m_settings;
 	// When update_settings_file() next does its work; present only
 	std::chrono::steady_clock::time_point m_next_settings_update;
+	// Patches the game at add-on load, seconds before it queues its intro screens
+	IntroSkipper m_intro_skipper;
 	// The features, declared before the tracker and the lists that point at them so they're destroyed after
 	Tonemapper m_tonemapper;
 	RenderPassTracker m_tracker;
