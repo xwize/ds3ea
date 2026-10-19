@@ -15,6 +15,8 @@ struct command_list;
 struct command_queue;
 struct device;
 struct pipeline_subobject;
+struct swapchain;
+struct swapchain_desc;
 enum class pipeline_stage : std::uint32_t;
 } // namespace reshade::api
 // NOLINTEND(readability-identifier-naming, cppcoreguidelines-virtual-class-destructor)

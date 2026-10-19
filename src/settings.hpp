@@ -59,6 +59,9 @@ public:
 	{
 		// [Tonemapper]
 		TonemapperValues tonemapper;
+		// [Display] Borderless: a borderless window over the monitor instead of exclusive full screen. Read once, at
+		// add-on load.
+		bool borderless = false;
 
 		bool operator==(const Values&) const = default;
 	};
