@@ -30,6 +30,7 @@ void for_each_setting(Values& values, const ReadOrWrite& read_or_write)
 	read_or_write("Tonemapper", "Bloom", values.tonemapper.bloom);
 	read_or_write("Tonemapper", "Dither", values.tonemapper.dither);
 	read_or_write("Tonemapper", "ApplyLUT", values.tonemapper.apply_lut);
+	read_or_write("Display", "Borderless", values.borderless);
 }
 } // namespace
 

@@ -1,8 +1,10 @@
 #pragma once
 
+#include "borderless_restyler.hpp"
 #include "intro_skipper.hpp"
 #include "listeners/device_listener.hpp"
 #include "listeners/pipeline_listener.hpp"
+#include "listeners/swapchain_listener.hpp"
 #include "render_pass_tracker.hpp"
 #include "settings.hpp"
 #include "tonemapper.hpp"
@@ -78,6 +80,39 @@ private:
 	 * @param device The device about to be destroyed.
 	 */
 	static void on_destroy_device(reshade::api::device* device);
+
+	/**
+	 * The game is creating its swap chain or resizing its buffers; the swap chain listeners may change the
+	 * description.
+	 * @param api Unused.
+	 * @param[in,out] desc What the game asked for.
+	 * @param hwnd Unused; the window comes from the swap chain once it's created.
+	 * @returns True if a listener changed desc.
+	 */
+	static bool on_create_swapchain(reshade::api::device_api api, reshade::api::swapchain_desc& desc, void* hwnd);
+
+	/**
+	 * The game created its swap chain or resized its buffers; tells the swap chain listeners.
+	 * @param swapchain The swap chain.
+	 * @param resize True if only the buffers were resized.
+	 */
+	static void on_init_swapchain(reshade::api::swapchain* swapchain, bool resize);
+
+	/**
+	 * The game is destroying its swap chain or about to resize its buffers; tells the swap chain listeners.
+	 * @param swapchain The swap chain.
+	 * @param resize True if only the buffers are about to be resized.
+	 */
+	static void on_destroy_swapchain(reshade::api::swapchain* swapchain, bool resize);
+
+	/**
+	 * The game is switching into or out of exclusive full screen; a swap chain listener may stop it.
+	 * @param swapchain The swap chain.
+	 * @param fullscreen True when switching into full screen.
+	 * @param hmonitor Unused.
+	 * @returns True to stop the switch.
+	 */
+	static bool on_set_fullscreen_state(reshade::api::swapchain* swapchain, bool fullscreen, void* hmonitor);
 
 	/**
 	 * The game created a pipeline (in D3D11, one shader); tells the pipeline listeners.
@@ -193,10 +228,12 @@ private:
 	std::chrono::steady_clock::time_point m_next_settings_update;
 	// Patches the game at add-on load, seconds before it queues its intro screens
 	IntroSkipper m_intro_skipper;
+	BorderlessRestyler m_borderless_restyler;
 	// The features, declared before the tracker and the lists that point at them so they're destroyed after
 	Tonemapper m_tonemapper;
 	RenderPassTracker m_tracker;
 	std::vector<IDeviceListener*> m_device_listeners;
+	std::vector<ISwapchainListener*> m_swapchain_listeners;
 	std::vector<IPipelineListener*> m_pipeline_listeners;
 };
 } // namespace ds3ea

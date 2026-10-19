@@ -2,6 +2,7 @@
 #include "addon_info.hpp"
 #include "listeners/device_listener.hpp"
 #include "listeners/pipeline_listener.hpp"
+#include "listeners/swapchain_listener.hpp"
 #include "settings.hpp"
 #include "utils/boundary.hpp"
 #include "utils/build_config.hpp"
@@ -44,6 +45,7 @@ Addon::Addon(HMODULE hmod, Key /*key*/)
 	: m_module(hmod)
 	, m_settings_file(k_ini_file_name)
 	, m_settings(m_settings_file)
+	, m_borderless_restyler(m_settings.get().borderless)
 	, m_tonemapper(m_settings)
 {
 	// Every listener is attached before any event can arrive, so the lists never change while handlers read them. The
@@ -52,10 +54,15 @@ Addon::Addon(HMODULE hmod, Key /*key*/)
 	m_pipeline_listeners.push_back(&m_tonemapper);
 	m_tracker.attach(&m_tonemapper);
 	m_device_listeners.push_back(&m_tonemapper);
+	m_swapchain_listeners.push_back(&m_borderless_restyler);
 
 	g_instance = this;
 	reshade::register_event<reshade::addon_event::init_device>(&Addon::on_init_device);
 	reshade::register_event<reshade::addon_event::destroy_device>(&Addon::on_destroy_device);
+	reshade::register_event<reshade::addon_event::create_swapchain>(&Addon::on_create_swapchain);
+	reshade::register_event<reshade::addon_event::init_swapchain>(&Addon::on_init_swapchain);
+	reshade::register_event<reshade::addon_event::destroy_swapchain>(&Addon::on_destroy_swapchain);
+	reshade::register_event<reshade::addon_event::set_fullscreen_state>(&Addon::on_set_fullscreen_state);
 	reshade::register_event<reshade::addon_event::init_pipeline>(&Addon::on_init_pipeline);
 	reshade::register_event<reshade::addon_event::destroy_pipeline>(&Addon::on_destroy_pipeline);
 	reshade::register_event<reshade::addon_event::destroy_command_list>(&Addon::on_destroy_command_list);
@@ -122,6 +129,46 @@ void Addon::on_destroy_device(reshade::api::device* device)
 		for (IDeviceListener* const listener : g_instance->m_device_listeners)
 			listener->on_device_destroyed(device);
 	});
+}
+
+bool Addon::on_create_swapchain(reshade::api::device_api /*api*/, reshade::api::swapchain_desc& desc, void* /*hwnd*/)
+{
+	bool changed = false;
+	call_and_catch("create_swapchain", [&desc, &changed]
+	{
+		for (ISwapchainListener* const listener : g_instance->m_swapchain_listeners)
+			changed |= listener->on_create_swapchain(desc);
+	});
+	return changed;
+}
+
+void Addon::on_init_swapchain(reshade::api::swapchain* swapchain, bool resize)
+{
+	call_and_catch("init_swapchain", [swapchain, resize]
+	{
+		for (ISwapchainListener* const listener : g_instance->m_swapchain_listeners)
+			listener->on_swapchain_created(swapchain, resize);
+	});
+}
+
+void Addon::on_destroy_swapchain(reshade::api::swapchain* swapchain, bool resize)
+{
+	call_and_catch("destroy_swapchain", [swapchain, resize]
+	{
+		for (ISwapchainListener* const listener : g_instance->m_swapchain_listeners)
+			listener->on_swapchain_destroyed(swapchain, resize);
+	});
+}
+
+bool Addon::on_set_fullscreen_state(reshade::api::swapchain* swapchain, bool fullscreen, void* /*hmonitor*/)
+{
+	bool should_stop = false;
+	call_and_catch("set_fullscreen_state", [swapchain, fullscreen, &should_stop]
+	{
+		for (ISwapchainListener* const listener : g_instance->m_swapchain_listeners)
+			should_stop |= listener->on_set_fullscreen_state(swapchain, fullscreen);
+	});
+	return should_stop;
 }
 
 void Addon::on_init_pipeline(reshade::api::device* /*device*/, reshade::api::pipeline_layout /*layout*/,

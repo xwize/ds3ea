@@ -71,11 +71,14 @@ if(DS3EA_SANITIZE)
 endif()
 
 # Code shared by the add-on and its tests. inipp is linked PRIVATE so only ini_settings_store.cpp sees it;
-# d3dcompiler provides D3DReflect for shader_reflection.cpp.
+# d3dcompiler provides D3DReflect for shader_reflection.cpp, comctl32 SetWindowSubclass for borderless_restyler.cpp.
 add_library(ds3ea_core STATIC
+	src/borderless_restyler.cpp
+	src/borderless_restyler.hpp
 	src/listeners/device_listener.hpp
 	src/listeners/pipeline_listener.hpp
 	src/listeners/render_pass_listener.hpp
+	src/listeners/swapchain_listener.hpp
 	src/render_pass.cpp
 	src/render_pass.hpp
 	src/render_pass_state_machine.cpp
@@ -105,7 +108,7 @@ add_library(ds3ea_core STATIC
 target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/shaders")
 target_link_libraries(ds3ea_core
 	PUBLIC fmt::fmt tl::expected
-	PRIVATE ds3ea_options d3dcompiler inipp::inipp reshade::headers
+	PRIVATE ds3ea_options comctl32 d3dcompiler inipp::inipp reshade::headers
 )
 ds3ea_clang_tidy(ds3ea_core)
 
