@@ -1,6 +1,7 @@
 #pragma once
 
 #include "borderless_restyler.hpp"
+#include "frame_rate_unlocker.hpp"
 #include "intro_skipper.hpp"
 #include "listeners/device_listener.hpp"
 #include "listeners/pipeline_listener.hpp"
@@ -229,6 +230,8 @@ private:
 	// Patches the game at add-on load, seconds before it queues its intro screens
 	IntroSkipper m_intro_skipper;
 	BorderlessRestyler m_borderless_restyler;
+	// Waits on present for the game's frame pacing object, then raises its cap
+	FrameRateUnlocker m_frame_rate_unlocker;
 	// The features, declared before the tracker and the lists that point at them so they're destroyed after
 	Tonemapper m_tonemapper;
 	RenderPassTracker m_tracker;

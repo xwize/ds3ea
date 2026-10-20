@@ -3,6 +3,8 @@ find_package(GTest REQUIRED)
 add_executable(ds3ea_tests
 	addon_info_test.cpp
 	borderless_restyler_test.cpp
+	frame_rate_unlocker_test.cpp
+	game_image_test.cpp
 	render_pass_state_machine_test.cpp
 	render_pass_test.cpp
 	settings_test.cpp
