@@ -1,6 +1,7 @@
 #pragma once
 
 #include "borderless_restyler.hpp"
+#include "frame_rate_unlocker.hpp"
 #include "intro_skipper.hpp"
 #include "listeners/device_listener.hpp"
 #include "listeners/pipeline_listener.hpp"
@@ -226,10 +227,11 @@ private:
 	Settings m_settings;
 	// When update_settings_file() next does its work; present only
 	std::chrono::steady_clock::time_point m_next_settings_update;
-	// Patches the game at add-on load, seconds before it queues its intro screens
+	// The features, declared before the tracker and the lists that point at them so they're destroyed after
+	// IntroSkipper patches the game at add-on load, seconds before it queues its intro screens
 	IntroSkipper m_intro_skipper;
 	BorderlessRestyler m_borderless_restyler;
-	// The features, declared before the tracker and the lists that point at them so they're destroyed after
+	FrameRateUnlocker m_frame_rate_unlocker;
 	Tonemapper m_tonemapper;
 	RenderPassTracker m_tracker;
 	std::vector<IDeviceListener*> m_device_listeners;

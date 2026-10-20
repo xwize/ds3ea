@@ -26,6 +26,8 @@ user32 = ctypes.WinDLL("user32", use_last_error=True)
 VK_MENU = 0x12
 VK_F4 = 0x73
 SCAN_E = 0x12
+SCAN_W = 0x11
+SCAN_SPACE = 0x39
 KEYEVENTF_KEYUP = 0x0002
 KEYEVENTF_SCANCODE = 0x0008
 SW_RESTORE = 9
@@ -83,6 +85,28 @@ def press_e(hwnd: int) -> None:
 	user32.keybd_event(0, SCAN_E, KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP, 0)
 
 
+def hold_keys(hwnd: int, scan_codes: list[int], seconds: float) -> None:
+	"""Holds the keys down together for a while, as a player running (W) or sprinting (W and Space) would."""
+	if user32.GetForegroundWindow() != hwnd:
+		user32.keybd_event(VK_MENU, 0, 0, 0)
+		user32.SetForegroundWindow(hwnd)
+		user32.keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
+	for scan in scan_codes:
+		user32.keybd_event(0, scan, KEYEVENTF_SCANCODE, 0)
+	time.sleep(seconds)
+	for scan in reversed(scan_codes):
+		user32.keybd_event(0, scan, KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP, 0)
+
+
+def move_character(hwnd: int) -> None:
+	"""Runs forward, rests, then sprints forward, so the add-on's log can compare the speeds."""
+	print(f"{time.strftime('%H:%M:%S')} Running forward (W) for 6s")
+	hold_keys(hwnd, [SCAN_W], 6)
+	time.sleep(3)
+	print(f"{time.strftime('%H:%M:%S')} Sprinting forward (W + Space) for 8s")
+	hold_keys(hwnd, [SCAN_W, SCAN_SPACE], 8)
+
+
 def send_alt_f4(hwnd: int) -> None:
 	user32.ShowWindow(hwnd, SW_RESTORE)
 	# Windows only lets the process that received the last input take the foreground, so a key event goes first
@@ -134,6 +158,8 @@ def main() -> int:
 		help="how long to run the game (default: 60, as loading into the game takes about 40s)")
 	parser.add_argument("--grace", type=float, default=15,
 		help="how long to wait for the game to exit after Alt+F4 before terminating it (default: 15)")
+	parser.add_argument("--move", type=float, metavar="AFTER",
+		help="AFTER seconds after the start, run forward for 6s, rest 3s, then sprint forward for 8s")
 	parser.add_argument("--title-only", action="store_true",
 		help=f"stay on the title screen instead of pressing E {TITLE_SCREEN_PRESSES} times to get into the game")
 	args = parser.parse_args()
@@ -167,7 +193,9 @@ def main() -> int:
 	exited_early = False
 	presses_left = 0 if args.title_only else TITLE_SCREEN_PRESSES
 	next_press_at = 0.0
-	deadline = time.monotonic() + args.seconds
+	start = time.monotonic()
+	deadline = start + args.seconds
+	moved = args.move is None
 	while time.monotonic() < deadline:
 		if process.poll() is not None:
 			exited_early = True
@@ -180,6 +208,11 @@ def main() -> int:
 				press_e(hwnd)
 				presses_left -= 1
 				next_press_at = time.monotonic() + PRESS_INTERVAL_SECONDS
+		if not moved and not presses_left and time.monotonic() >= start + args.move:
+			hwnd = find_main_window(process.pid)
+			if hwnd:
+				move_character(hwnd)
+			moved = True
 		time.sleep(0.1)
 
 	if presses_left == TITLE_SCREEN_PRESSES and not exited_early:

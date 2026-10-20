@@ -75,6 +75,10 @@ endif()
 add_library(ds3ea_core STATIC
 	src/borderless_restyler.cpp
 	src/borderless_restyler.hpp
+	src/frame_rate_unlocker.cpp
+	src/frame_rate_unlocker.hpp
+	src/game_image.cpp
+	src/game_image.hpp
 	src/listeners/device_listener.hpp
 	src/listeners/pipeline_listener.hpp
 	src/listeners/render_pass_listener.hpp
@@ -108,7 +112,7 @@ add_library(ds3ea_core STATIC
 target_include_directories(ds3ea_core PUBLIC "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/shaders")
 target_link_libraries(ds3ea_core
 	PUBLIC fmt::fmt tl::expected
-	PRIVATE ds3ea_options comctl32 d3dcompiler inipp::inipp reshade::headers
+	PRIVATE ds3ea_options comctl32 d3dcompiler inipp::inipp reshade::headers version
 )
 ds3ea_clang_tidy(ds3ea_core)
 

@@ -135,3 +135,9 @@ Settings live in `ds3ea.ini` in the game's working directory (the `Game` folder)
 settings use their defaults. They can also be changed in game, under **DS3EA** in the overlay's *Add-ons* tab, and
 changes are saved to `ds3ea.ini` within half a second. A Debug build also reloads `ds3ea.ini` when another program
 edits it while the game runs.
+
+## Attribution
+
+- The frame rate unlock is based on [DS3DebugFPS](https://github.com/0dm/DS3DebugFPS) by 0dm, under the
+  [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0): its byte patterns, field offsets and sprint fix
+  maths.

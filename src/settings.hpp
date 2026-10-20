@@ -54,6 +54,19 @@ public:
 		bool operator==(const TonemapperValues&) const = default;
 	};
 
+	/** The frame limiter's settings, in ds3ea.ini's [FrameLimiter] section. */
+	struct FrameLimiterValues
+	{
+		static constexpr float k_vanilla_frame_rate_limit = 60.0f;
+
+		// The game's frame rate cap in fps: 60 leaves the game's own cap alone, 0 removes it
+		float frame_rate_limit = k_vanilla_frame_rate_limit;
+		// Keep sprinting at full speed above 60 fps
+		bool fix_sprint_slowdown = true;
+
+		bool operator==(const FrameLimiterValues&) const = default;
+	};
+
 	/** Every setting the add-on changes at runtime, one struct per feature. Each field's default is its initialiser. */
 	struct Values
 	{
@@ -62,6 +75,8 @@ public:
 		// [Display] Borderless: a borderless window over the monitor instead of exclusive full screen. Read once, at
 		// add-on load.
 		bool borderless = false;
+		// [FrameLimiter]
+		FrameLimiterValues frame_limiter;
 
 		bool operator==(const Values&) const = default;
 	};

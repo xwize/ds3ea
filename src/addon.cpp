@@ -46,6 +46,7 @@ Addon::Addon(HMODULE hmod, Key /*key*/)
 	, m_settings_file(k_ini_file_name)
 	, m_settings(m_settings_file)
 	, m_borderless_restyler(m_settings.get().borderless)
+	, m_frame_rate_unlocker(m_settings)
 	, m_tonemapper(m_settings)
 {
 	// Every listener is attached before any event can arrive, so the lists never change while handlers read them. The
@@ -260,6 +261,7 @@ void Addon::on_present(reshade::api::command_queue* queue, reshade::api::swapcha
 	call_and_catch("present", [queue]
 	{
 		g_instance->m_tracker.on_present(queue);
+		g_instance->m_frame_rate_unlocker.on_present();
 		g_instance->update_settings_file();
 	});
 }
