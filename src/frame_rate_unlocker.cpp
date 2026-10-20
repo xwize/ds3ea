@@ -183,17 +183,22 @@ SprintSpeedFactors compute_sprint_speed_factors(float frame_rate_limit, float me
 {
 	constexpr float k_shortest_frame = 1.0f / 480.0f;
 	constexpr float k_longest_frame = 0.05f;
-	constexpr float k_high_frame_rate = 90.0f;
+
 	constexpr float k_vanilla_frame_rate = 60.0f;
+	constexpr float k_high_frame_rate = 90.0f;
+
 	// Below this speed in m/s the check counts the character as stuck (the game's 30.0 = 1 / (2 m/s * 1/60 s))
 	constexpr float k_stuck_speed = 2.0f;
+
 	constexpr float k_vanilla_slowdown = 0.8f;
 	constexpr float k_vanilla_recovery = 1.2f;
+
 	constexpr float k_high_slack = 1.2f;
 	constexpr float k_high_recovery = 1.5f;
 
 	const bool is_measured_valid = measured_frame_time >= k_shortest_frame &&
 		measured_frame_time <= k_longest_frame;
+
 	const float frame_time = std::clamp(is_measured_valid ? measured_frame_time : 1.0f / frame_rate_limit,
 		k_shortest_frame, k_longest_frame);
 
@@ -323,15 +328,19 @@ void FrameRateUnlocker::patch_sprint_check()
 		const std::size_t instruction = matches.front() + k_sprint_mulss_offsets.at(i);
 		const std::size_t constant = resolve_rip_relative(image, instruction + k_mulss_displacement,
 			instruction + k_mulss_size).value_or(0);
+
 		const std::span<std::byte> displacement = image.subspan(instruction + k_mulss_displacement,
 			sizeof(std::int32_t));
+		const std::vector<std::byte> original(displacement.begin(), displacement.end());
+
 		const auto new_displacement = static_cast<std::int32_t>(static_cast<std::int64_t>(address_of(fields.at(i))) -
 			static_cast<std::int64_t>(address_of(image.data()) + instruction + k_mulss_size));
 		std::array<std::byte, sizeof(std::int32_t)> replacement = {};
 		std::memcpy(replacement.data(), &new_displacement, sizeof(new_displacement));
-		const std::vector<std::byte> original(displacement.begin(), displacement.end());
+
 		log::debug("FrameRateUnlocker: sprint constant {} at +{:#x} was {}", i, constant,
 			read_memory<float>(to_address(constant)).value_or(NAN));
+
 		Result<MemoryPatch> patch = MemoryPatch::apply(displacement, original, replacement);
 
 		if (!patch)

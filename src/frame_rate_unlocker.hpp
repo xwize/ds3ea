@@ -14,8 +14,10 @@
 namespace ds3ea
 {
 /**
- * The constants the game's sprint "stuck" check multiplies by, which assume 60 fps. Above about 80 fps the
- * character moves too little per frame to pass the check, so sprinting slows down.
+ * The constants of the game's sprint "stuck" check. Each frame, the game decides whether a sprinting character is stuck
+ * against a wall by checking that it moved far enough that frame. The distance it expects is tuned for 60 fps frames,
+ * so above about 80 fps the character covers too little ground per frame, the game treats it as stuck and slows its
+ * sprint down. These replace the game's constants with ones scaled to the actual frame time.
  */
 struct SprintSpeedFactors
 {
@@ -28,8 +30,8 @@ struct SprintSpeedFactors
 };
 
 /**
- * Scales the sprint check's 60 fps constants to a frame time, as DS3DebugFPS does: the per-frame rates become
- * exponents of the frame time, and above 90 fps the check gets some slack and a faster recovery.
+ * Scales the sprint check's 60 fps constants to a frame time: the per-frame rates become exponents of the frame time,
+ * and above 90 fps the check gets some slack and a faster recovery.
  * @param frame_rate_limit The cap in fps.
  * @param measured_frame_time The game's last frame time in seconds; clamped to 1/480..1/20, and replaced by
  *     1/frame_rate_limit when it's outside that range.
@@ -38,10 +40,9 @@ struct SprintSpeedFactors
 [[nodiscard]] SprintSpeedFactors compute_sprint_speed_factors(float frame_rate_limit, float measured_frame_time);
 
 /**
- * Raises or removes the game's 60 fps cap by turning on its own debug frame limiter at a custom rate, in its frame
- * pacing object (SprjFlipper), and keeps sprinting at full speed above 60 fps. The object already exists when
- * ReShade loads the add-on. Based on 0dm's DS3DebugFPS. Turned on and off for the whole build by
- * k_unlock_frame_rate_in_build.
+ * Raises or removes the game's 60 fps cap by turning on its own debug frame limiter at a custom rate. Modifies its
+ * frame pacing object (SprjFlipper), which already exists when ReShade loads the add-on. Also keeps sprinting at full
+ * speed above 60 fps. Turned on and off for the whole build by k_unlock_frame_rate_in_build.
  */
 class FrameRateUnlocker
 {
