@@ -9,6 +9,7 @@ to build on. Coding rules live in [GUIDELINES.md](GUIDELINES.md).
 * Tonemapper replacement with bloom control.
 * Skipping intro screens.
 * Borderless window mode.
+* Frame rate limiting.
 
 ## Getting started
 
