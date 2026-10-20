@@ -71,12 +71,12 @@ public:
 	struct Values
 	{
 		// [Tonemapper]
-		TonemapperValues tonemapper;
+		TonemapperValues tonemapper{};
 		// [Display] Borderless: a borderless window over the monitor instead of exclusive full screen. Read once, at
 		// add-on load.
 		bool borderless = false;
 		// [FrameLimiter]
-		FrameLimiterValues frame_limiter;
+		FrameLimiterValues frame_limiter{};
 
 		bool operator==(const Values&) const = default;
 	};
