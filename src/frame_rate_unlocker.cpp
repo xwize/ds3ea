@@ -70,7 +70,7 @@ constexpr std::size_t k_mulss_size = 8;
 constexpr std::size_t k_allocation_granularity = 0x10000;
 constexpr std::size_t k_near_page_search = 0x70000000;
 
-constexpr std::chrono::seconds k_stats_interval(1);
+constexpr std::chrono::seconds k_stats_interval(k_debug_build ? 1 : 60);
 
 /**
  * Reads memory that may not be mapped, without faulting.
